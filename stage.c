@@ -68,12 +68,6 @@ void StageClear(SStage* stage)
 	Game.mPd->sprite->removeSprite(stage->mSpriteGun);
 	Game.mPd->sprite->freeSprite(stage->mSpriteGun);
 
-	SBall* ball = stage->mBalls;
-	for (int i = 0; i < stage->mNumberBalls; i++, ball++)
-	{
-		Game.mPd->sprite->removeSprite(ball->mSprite);
-		Game.mPd->sprite->freeSprite(ball->mSprite);
-	}
 	stage->mNumberBalls = 0;
 	stage->mNumberBallsAllocated = 0.0001f;
 	free(stage->mBalls);
@@ -85,6 +79,9 @@ void StageDraw(SStage* stage)
 	{
 		return;
 	}
+	Game.mPd->graphics->clear(1);
+
+	Game.mPd->graphics->drawBitmap(Game.mResources.mStageBackground, 0, 0, kBitmapUnflipped);
 
 	Game.mPd->graphics->drawRotatedBitmap(Game.mResources.mGun, GUN_POS_X, GUN_POS_Y, stage->mGunAngle + 90.0f, 0.5f, 0.5f, 1.0f, 1.0f);
 	Game.mPd->graphics->drawLine(stage->mAnchorPos.x, stage->mAnchorPos.y, stage->mAnchorPos.x + 10*stage->mAimDirection.x, stage->mAnchorPos.y + 10*stage->mAimDirection.y, 1, 0);
@@ -93,6 +90,12 @@ void StageDraw(SStage* stage)
 	{
 		Game.mPd->graphics->drawLine(stage->mAnchorPos.x, stage->mAnchorPos.y, stage->mHookPos.x, stage->mHookPos.y, 2, 0);
 		Game.mPd->graphics->drawEllipse(stage->mHookPos.x- HOOK_RADIUS/2, stage->mHookPos.y- HOOK_RADIUS/2, HOOK_RADIUS, HOOK_RADIUS, 2, 0, 360, 0);
+	}
+
+	SBall* ball = stage->mBalls;
+	for (int i=0; i<stage->mNumberBalls; i++, ball++)
+	{
+		Game.mPd->graphics->drawBitmap(Game.mResources.mBall, ball->mPos.x - ball->mRadius, ball->mPos.y - ball->mRadius, kBitmapUnflipped);
 	}
 }
 
@@ -131,10 +134,8 @@ void StageUpdatePhysics(SStage* stage)
 				SBall* ball = stage->mBalls;
 				for (int i = 0; i < stage->mNumberBalls; i++, ball++)
 				{
-					float x, y;
-					Game.mPd->sprite->getPosition(ball->mSprite, &x, &y);
-					float dx = x - stage->mHookPos.x;
-					float dy = y - stage->mHookPos.y;
+					float dx = ball->mPos.x - stage->mHookPos.x;
+					float dy = ball->mPos.y - stage->mHookPos.y;
 					float minDst = ball->mRadius + HOOK_RADIUS;
 					if ((dx * dx + dy * dy) < minDst * minDst)
 					{
@@ -142,7 +143,6 @@ void StageUpdatePhysics(SStage* stage)
 						ball->mUpdatePhysics = false;
 						stage->mIsGrabbing = 2;
 						break;
-
 					}
 				}
 			}
@@ -157,8 +157,10 @@ void StageUpdatePhysics(SStage* stage)
 			dst.y -= stage->mAnchorPos.y;
 			if (stage->mBalGrabbed != NULL)
 			{
-				Game.mPd->sprite->moveTo(stage->mBalGrabbed->mSprite, stage->mHookPos.x, stage->mHookPos.y);
+				stage->mBalGrabbed->mPos.x = stage->mHookPos.x;
+				stage->mBalGrabbed->mPos.y = stage->mHookPos.y;
 			}
+
 			if (ModuleSqr(&dst) < 100)
 			{
 				stage->mIsGrabbing = 0;
@@ -170,7 +172,8 @@ void StageUpdatePhysics(SStage* stage)
 		stage->mHookPos = stage->mAnchorPos;
 		if (stage->mBalGrabbed != NULL)
 		{
-			Game.mPd->sprite->moveTo(stage->mBalGrabbed->mSprite, stage->mHookPos.x, stage->mHookPos.y);
+			stage->mBalGrabbed->mPos.x = stage->mHookPos.x;
+			stage->mBalGrabbed->mPos.y = stage->mHookPos.y;
 		}
 	}
 
@@ -183,11 +186,8 @@ void StageUpdatePhysics(SStage* stage)
 			continue;
 		}
 
-		float x, y;
-		Game.mPd->sprite->getPosition(ball->mSprite, &x, &y);
-		x += ball->mV.x;
-		y += ball->mV.y;
-		Game.mPd->sprite->moveTo(ball->mSprite, x, y);
+		ball->mPos.x += ball->mVel.x;
+		ball->mPos.y += ball->mVel.y;
 	}
 
 	// Resolve collisions
@@ -198,8 +198,6 @@ void StageUpdatePhysics(SStage* stage)
 		{
 			continue;;
 		}
-		Vec2f p1;
-		Game.mPd->sprite->getPosition(b1->mSprite, &p1.x, &p1.y);
 
 		for (int j = i+1; j < stage->mNumberBalls; j++)
 		{
@@ -208,12 +206,9 @@ void StageUpdatePhysics(SStage* stage)
 			{
 				continue;;
 			}
-			Vec2f p2;
-			Game.mPd->sprite->getPosition(b2->mSprite, &p2.x, &p2.y);
-			Vec2f ;
 			Vec2f d;
-			d.x = p2.x - p1.x;
-			d.y = p2.y - p1.y;
+			d.x = b2->mPos.x - b1->mPos.x;
+			d.y = b2->mPos.y - b1->mPos.y;
 			float dst2 = ModuleSqr(&d);
 			float overlapDst = b1->mRadius + b2->mRadius;
 			if (dst2 < overlapDst * overlapDst)
@@ -223,48 +218,46 @@ void StageUpdatePhysics(SStage* stage)
 				n.x /= dst;
 				n.y /= dst;
 				Vec2f t = Perpendicular(&n);
-				float v1n = Dot(&b1->mV, &n);
-				float v2n = Dot(&b2->mV, &n);
-				float v1t = Dot(&b1->mV, &t);
-				float v2t = Dot(&b2->mV, &t);
+				float v1n = Dot(&b1->mVel, &n);
+				float v2n = Dot(&b2->mVel, &n);
+				float v1t = Dot(&b1->mVel, &t);
+				float v2t = Dot(&b2->mVel, &t);
 
 				// Extra safe to avoid duplicated collisions
 				if (v2n - v1n < 0)
 				{
-					b1->mV.x = t.x * v1t + n.x * v2n;
-					b1->mV.y = t.y * v1t + n.y * v2n;
+					b1->mVel.x = t.x * v1t + n.x * v2n;
+					b1->mVel.y = t.y * v1t + n.y * v2n;
 
-					b2->mV.x = t.x * v2t + n.x * v1n;
-					b2->mV.y = t.y * v2t + n.y * v1n;
+					b2->mVel.x = t.x * v2t + n.x * v1n;
+					b2->mVel.y = t.y * v2t + n.y * v1n;
 				}
 			}
 		}
 
 		if (b1->mUpdatePhysics)
 		{
-			if (p1.x < GAMEPLAY_XMIN + b1->mRadius && b1->mV.x < 0.0f)
+			if (b1->mPos.x < GAMEPLAY_XMIN + b1->mRadius && b1->mVel.x < 0.0f)
 			{
-				p1.x = GAMEPLAY_XMIN + b1->mRadius;
-				b1->mV.x *= -ELASTIC_COEFFICIENT_WALL;
+				b1->mPos.x = GAMEPLAY_XMIN + b1->mRadius;
+				b1->mVel.x *= -ELASTIC_COEFFICIENT_WALL;
 			}
-			else if (p1.x > GAMEPLAY_XMAX - b1->mRadius && b1->mV.x > 0.0f)
+			else if (b1->mPos.x > GAMEPLAY_XMAX - b1->mRadius && b1->mVel.x > 0.0f)
 			{
-				p1.x = GAMEPLAY_XMAX - b1->mRadius;;
-				b1->mV.x *= -ELASTIC_COEFFICIENT_WALL;
-			}
-
-			if (p1.y < GAMEPLAY_YMIN + b1->mRadius && b1->mV.y < 0.0f)
-			{
-				p1.y = GAMEPLAY_YMIN + b1->mRadius;
-				b1->mV.y *= -ELASTIC_COEFFICIENT_WALL;
-			}
-			else if (p1.y > GAMEPLAY_YMAX - b1->mRadius && b1->mV.y > 0.0f)
-			{
-				p1.y = GAMEPLAY_YMAX - b1->mRadius;
-				b1->mV.y *= -ELASTIC_COEFFICIENT_WALL;
+				b1->mPos.x = GAMEPLAY_XMAX - b1->mRadius;;
+				b1->mVel.x *= -ELASTIC_COEFFICIENT_WALL;
 			}
 
-			Game.mPd->sprite->moveTo(b1->mSprite, p1.x, p1.y);
+			if (b1->mPos.y < GAMEPLAY_YMIN + b1->mRadius && b1->mVel.y < 0.0f)
+			{
+				b1->mPos.y = GAMEPLAY_YMIN + b1->mRadius;
+				b1->mVel.y *= -ELASTIC_COEFFICIENT_WALL;
+			}
+			else if (b1->mPos.y > GAMEPLAY_YMAX - b1->mRadius && b1->mVel.y > 0.0f)
+			{
+				b1->mPos.y = GAMEPLAY_YMAX - b1->mRadius;
+				b1->mVel.y *= -ELASTIC_COEFFICIENT_WALL;
+			}
 		}
 	}
 }
@@ -309,8 +302,8 @@ void StageUpdateInput(SStage* stage)
 			if (stage->mBalGrabbed != NULL)
 			{
 				stage->mBalGrabbed->mUpdatePhysics = true;
-				stage->mBalGrabbed->mV.x = stage->mAimDirection.x * SHOOT_SPEED;
-				stage->mBalGrabbed->mV.y = stage->mAimDirection.y * SHOOT_SPEED;
+				stage->mBalGrabbed->mVel.x = stage->mAimDirection.x * SHOOT_SPEED;
+				stage->mBalGrabbed->mVel.y = stage->mAimDirection.y * SHOOT_SPEED;
 				stage->mBalGrabbed = NULL;
 			}
 		}
@@ -351,16 +344,10 @@ void StageAddBall(SStage* stage, float x , float y, float vx, float vy)
 
 	SBall* ballNew = &stage->mBalls[stage->mNumberBalls - 1];
 	ballNew->mRadius = 16.0f;
-
-	LCDSprite* sprite = Game.mPd->sprite->newSprite();
-	Game.mPd->sprite->setImage(sprite, Game.mResources.mBall, kBitmapUnflipped);
-	Game.mPd->sprite->setZIndex(sprite, 300);
-	Game.mPd->sprite->addSprite(sprite);
-	Game.mPd->sprite->moveTo(sprite, x, y);
-
-	ballNew->mSprite = sprite;
-	ballNew->mV.x = vx;
-	ballNew->mV.y = vy;
+	ballNew->mPos.x = x;
+	ballNew->mPos.y = y;
+	ballNew->mVel.x = vx;
+	ballNew->mVel.y = vy;
 	ballNew->mUpdatePhysics = true;
 	ballNew->mCanMerge = false;
 }

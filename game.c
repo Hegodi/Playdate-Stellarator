@@ -40,8 +40,6 @@ void UpdateInput()
 int Update(void* ud)
 {
 	StageUpdate(&Stage);
-
-	Game.mPd->sprite->updateAndDrawSprites();
 	StageDraw(&Stage);
 	Game.mPd->system->drawFPS(0, 0);
 }

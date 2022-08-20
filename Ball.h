@@ -5,12 +5,11 @@
 
 typedef struct
 {
-	LCDSprite* mSprite;
 	float mRadius;
-	Vec2f mV;
+	Vec2f mVel;
+	Vec2f mPos;
 	bool mUpdatePhysics;
 	bool mCanMerge;
-	
 } SBall;
 
 #endif
