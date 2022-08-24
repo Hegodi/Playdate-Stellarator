@@ -5,27 +5,43 @@
 #include "utils.h"
 #include "Ball.h"
 
+typedef struct  
+{
+	int mMaxSlots;
+	int mMaxBalls;
+	int mSpawnMinPeriod;
+	int mSpawnMaxPeriod;
+
+} SStageConfig;
+
 typedef struct 
 {
 	bool mIsGameOver;
 	SBall* mBalls;
 	int mNumberBalls;
-	int mNumberBallsAllocated;
+	int mMaxNumberBalls;
 	int mScore;
+	SBall** mBallsInSlots;
+	int mMaxSlots;
+	int mSlotSelected;
+	int mSpawnMinPeriod;
+	int mSpawnDeltaPeriod;
 
+	unsigned int mTicks;
+	unsigned int mTickNextSpawn;
 	Vec2f mAimDirection;
 	Vec2f mHookPos;
 	Vec2f mAnchorPos;
 	float mGunAngle;
 	int  mIsGrabbing;
-	SBall* mBalGrabbed;
 	SAnimatedSprite mAtomSelectedFX;
+	bool mMaxBallsReached;
 	unsigned int mNextId;
 		
 } SStage;
 
-extern void StageInit(SStage* stage);
-extern void StageClear(SStage* stage);
-extern void StageDraw(SStage* stage);
-extern void StageUpdate(SStage* stage);
+void StageInit(SStage* stage, SStageConfig* config);
+void StageClear(SStage* stage);
+void StageDraw(SStage* stage);
+void StageUpdate(SStage* stage);
 #endif

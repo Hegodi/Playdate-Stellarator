@@ -14,12 +14,11 @@ typedef struct
 	struct
 	{
 		LCDBitmap* mStageBackground;
-		LCDBitmap* mGun;
-		LCDBitmap** mGunFrame;
 		LCDBitmap** mAtom1;
 		LCDBitmap** mAtom2;
 		LCDBitmap** mAtom4;
 		LCDBitmap** mAtomSelectedFX;
+
 		LCDFont* mFont;
 	} mResources;
 } SGame;

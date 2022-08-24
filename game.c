@@ -9,13 +9,16 @@
 SGame Game;
 SStage Stage;
 
+static SStageConfig StageConfigs[] = { 
+	{ 3, 16, 60, 300 } ,
+	{ 3, 16, 60, 240 } ,
+	{ 3, 16, 30, 160 } 
+};
+
+
 void LoadBitmaps()
 {
 	Game.mResources.mStageBackground = loadImageAtPath(Game.mPd, "images/StageBG");
-	Game.mResources.mGun = loadImageAtPath(Game.mPd, "images/AtomsGun");
-	Game.mResources.mGunFrame = (LCDBitmap**)malloc(2 * sizeof(LCDBitmap*));
-	Game.mResources.mGunFrame[0] = loadImageAtPath(Game.mPd, "images/AtomsGun_Frame_a");
-	Game.mResources.mGunFrame[1] = loadImageAtPath(Game.mPd, "images/AtomsGun_Frame_b");
 
 	Game.mResources.mAtom1 = (LCDBitmap**)malloc(4 * sizeof(LCDBitmap*));
 	Game.mResources.mAtom1[0] = loadImageAtPath(Game.mPd, "images/Atom1a");
@@ -39,7 +42,8 @@ void LoadBitmaps()
 	Game.mResources.mAtomSelectedFX[0] = loadImageAtPath(Game.mPd, "images/AtomHLa");
 	Game.mResources.mAtomSelectedFX[1] = loadImageAtPath(Game.mPd, "images/AtomHLb");
 
-	//Game.mResources.mFont = Game.mPd->graphics->fo
+	const char *outErr;
+	Game.mResources.mFont = Game.mPd->graphics->loadFont("fonts/font-full-circle", &outErr);
 
 }
 
@@ -47,13 +51,13 @@ void InitGame(PlaydateAPI* pd)
 {
 	Game.mPd = pd;
 	LoadBitmaps();
-	StageInit(&Stage);
+
+	StageInit(&Stage, &StageConfigs[0]);
 }
 
 void CleanupGame()
 {
 	Game.mPd->graphics->freeBitmap(Game.mResources.mStageBackground);
-	Game.mPd->graphics->freeBitmap(Game.mResources.mGun);
 
 	for (int i=0; i<4; i++)
 	{
@@ -64,20 +68,13 @@ void CleanupGame()
 	for (int i = 0; i < 2; i++)
 	{
 		Game.mPd->graphics->freeBitmap(Game.mResources.mAtomSelectedFX[i]);
-		Game.mPd->graphics->freeBitmap(Game.mResources.mGunFrame[i]);
 	}
 
-	free(Game.mResources.mGunFrame);
 	free(Game.mResources.mAtomSelectedFX);
 	free(Game.mResources.mAtom1);
 	free(Game.mResources.mAtom2);
 	free(Game.mResources.mAtom4);
 }
-
-void UpdateInput()
-{
-}
-
 
 int Update(void* ud)
 {
@@ -85,4 +82,5 @@ int Update(void* ud)
 	StageDraw(&Stage);
 	//Game.mPd->system->drawFPS(0, 0);
 }
+
 

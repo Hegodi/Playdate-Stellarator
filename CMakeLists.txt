@@ -34,10 +34,14 @@ file(GLOB IMAGES
 	"Source/images/*"
 )
 
+file(GLOB FONTS
+	"Source/fonts/*"
+)
+
 if (TOOLCHAIN STREQUAL "armgcc")
 	add_executable(${PLAYDATE_GAME_DEVICE} ${SDK}/C_API/buildsupport/setup.c main.c game.c stage.c ball.c utils.c)
 else()
-	add_library(${PLAYDATE_GAME_NAME} SHARED main.c game.c stage.c ball.c utils.c ${IMAGES})
+	add_library(${PLAYDATE_GAME_NAME} SHARED main.c game.c stage.c ball.c utils.c ${IMAGES} ${FONTS})
 endif()
 
 include(${SDK}/C_API/buildsupport/playdate_game.cmake)

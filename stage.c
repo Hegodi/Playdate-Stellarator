@@ -9,13 +9,14 @@
 #define  GAMEPLAY_YMAX SCREEN_HEIGHT - 7
 
 #define AIM_ANGLE_MAX 60.0f
-#define CANNON_LENGTH 40
-#define GUN_POS_X 32
-#define GUN_POS_Y SCREEN_HEIGHT / 2
+#define SOCKET_POS_X 19
+#define SOCKET_SIZE 40
 #define HOOK_SPEED 20.0f
 #define HOOK_RADIUS 20
 #define SHOOT_SPEED 10.0f
 #define ELASTIC_COEFFICIENT_WALL 0.9f
+#define SPAWN_POINT_X 375
+#define SPAWN_POINT_Y 32
 
 extern void StageAddBall(SStage* stage, float x, float y, float vx, float vy, int energy);
 extern void StageDeleteBall(SStage* stage, unsigned int id);
@@ -23,29 +24,39 @@ extern void StageUpdateInput(SStage* stage);
 extern void StageUpdateAimDirection(SStage* stage);
 extern void StageSetupAtom(SBall* ball, int energy);
 
-void StageInit(SStage* stage)
+void StageInit(SStage* stage, SStageConfig* config)
 {
 	if (stage == NULL)
 	{
 		return;
 	}
 
-	stage->mNumberBalls = 0;
-	stage->mNumberBallsAllocated = 0;
-	stage->mBalls = NULL;
+	stage->mTicks = 0;
+	stage->mTickNextSpawn = 10;
+
 	stage->mScore = 0;
+
+	stage->mMaxNumberBalls = config->mMaxBalls;
+	stage->mNumberBalls = 0;
+	stage->mBalls = malloc(stage->mMaxNumberBalls * sizeof(SBall));
 
 	stage->mGunAngle = 0.01f;
 	stage->mIsGrabbing = false;
-	StageUpdateAimDirection(stage);
 	stage->mHookPos = stage->mAnchorPos;
-	stage->mBalGrabbed = NULL;
 
-	StageAddBall(stage, 100.0f, SCREEN_HEIGHT*0.5f, 5.0f, 2.0f, 1);
-	StageAddBall(stage, 300.0f, SCREEN_HEIGHT*0.5f, 3.0f, 1.0f, 1);
-	StageAddBall(stage, 200.0f, SCREEN_HEIGHT*0.5f, 2.0f, 1.0f, 4);
+	stage->mMaxSlots = config->mMaxSlots;
+	stage->mBallsInSlots = (SBall**)malloc(stage->mMaxSlots * sizeof(SBall*));
+	for (int i = 0; i < stage->mMaxSlots; i++)
+	{
+		stage->mBallsInSlots[i] = NULL;
+	}
+
+	stage->mSpawnMinPeriod = config->mSpawnMinPeriod;
+	stage->mSpawnDeltaPeriod = config->mSpawnMaxPeriod - config->mSpawnMinPeriod;
+	stage->mMaxBallsReached = false;
 
 	stage->mNextId = 1;
+	StageUpdateAimDirection(stage);
 }
 
 void StageClear(SStage* stage)
@@ -56,8 +67,10 @@ void StageClear(SStage* stage)
 	}
 
 	stage->mNumberBalls = 0;
-	stage->mNumberBallsAllocated = 0.0001f;
+	stage->mMaxNumberBalls = 0;
+	stage->mMaxSlots = 0;
 	free(stage->mBalls);
+	free(stage->mBallsInSlots);
 }
 
 void StageDraw(SStage* stage)
@@ -69,8 +82,27 @@ void StageDraw(SStage* stage)
 	Game.mPd->graphics->clear(1);
 
 	Game.mPd->graphics->drawBitmap(Game.mResources.mStageBackground, 0, 0, kBitmapUnflipped);
-	Game.mPd->graphics->drawRotatedBitmap(Game.mResources.mGunFrame[0], GUN_POS_X, GUN_POS_Y, 90.0f, 0.5f, 0.5f, 1.0f, 1.0f, kBitmapUnflipped);
-	Game.mPd->graphics->drawRotatedBitmap(Game.mResources.mGun, GUN_POS_X, GUN_POS_Y, stage->mGunAngle + 90.0f, 0.5f, 0.5f, 1.0f, 1.0f);
+	int y = SCREEN_HEIGHT * 0.5f - stage->mMaxSlots * SOCKET_SIZE / 2;
+	for (int i = 0; i < stage->mMaxSlots; i++, y+=SOCKET_SIZE)
+	{
+		if (stage->mBallsInSlots[i] != NULL)
+		{
+			SBall* ball = stage->mBallsInSlots[i];
+			DrawAnimatedSprite(Game.mPd, &ball->mAnimatedSprite, ball->mPos.x - 16, ball->mPos.y - 16);
+		}
+		else
+		{
+			//Game.mPd->graphics->drawRect(SOCKET_POS_X-16, y, 32, 32, kColorBlack);
+			Game.mPd->graphics->fillEllipse(SOCKET_POS_X-16, y, 32, 32, 0, 360, kColorBlack);
+		}
+
+		if (stage->mSlotSelected == i)
+		{
+			Game.mPd->graphics->drawLine(stage->mAnchorPos.x, stage->mAnchorPos.y, stage->mAnchorPos.x + 64*stage->mAimDirection.x, stage->mAnchorPos.y + 64*stage->mAimDirection.y, 1, kColorBlack);
+		}
+	}
+
+
 
 	if (stage->mIsGrabbing)
 	{
@@ -88,10 +120,13 @@ void StageDraw(SStage* stage)
 		DrawAnimatedSprite(Game.mPd, &ball->mAnimatedSprite, ball->mPos.x - 16, ball->mPos.y - 16);
 	}
 
+	int secondsRaw = stage->mTicks / 30;
+	int minutes = secondsRaw/ 60;
+	int seconds = secondsRaw % 60;
 	static char buffer[128];
-	sprintf(buffer, "Score: %d", stage->mScore);
+	sprintf(buffer, "%02d:%02d\n%03d\n%d",minutes, seconds, stage->mScore, stage->mNumberBalls);
 	Game.mPd->graphics->setFont(Game.mResources.mFont);
-	Game.mPd->graphics->drawText(buffer, strlen(buffer), kASCIIEncoding, 10, 10);
+	Game.mPd->graphics->drawText(buffer, strlen(buffer), kASCIIEncoding, 2, 2);
 }
 
 void StageUpdateAimDirection(SStage* stage)
@@ -99,8 +134,9 @@ void StageUpdateAimDirection(SStage* stage)
 	float angleRad = stage->mGunAngle * 3.14159f / 180.0f;
 	stage->mAimDirection.x = cosf(angleRad);
 	stage->mAimDirection.y = sinf(angleRad);
-	stage->mAnchorPos.x = GUN_POS_X + stage->mAimDirection.x * CANNON_LENGTH;
-	stage->mAnchorPos.y = GUN_POS_Y + stage->mAimDirection.y * CANNON_LENGTH;
+
+	stage->mAnchorPos.x = SOCKET_POS_X;
+	stage->mAnchorPos.y = SCREEN_HEIGHT * 0.5f - stage->mMaxSlots * SOCKET_SIZE / 2 + stage->mSlotSelected * SOCKET_SIZE + 16; 
 }
 
 void StageUpdatePhysics(SStage* stage)
@@ -119,7 +155,7 @@ void StageUpdatePhysics(SStage* stage)
 				stage->mIsGrabbing = 2;
 			}
 
-			if (stage->mHookPos.x < GAMEPLAY_XMIN || stage->mHookPos.x > GAMEPLAY_XMAX ||
+			if (stage->mHookPos.x > GAMEPLAY_XMAX ||
 			    stage->mHookPos.y < GAMEPLAY_YMIN || stage->mHookPos.y > GAMEPLAY_YMAX)
 			{
 				stage->mIsGrabbing = 2;
@@ -134,7 +170,7 @@ void StageUpdatePhysics(SStage* stage)
 					float minDst = ball->mRadius + HOOK_RADIUS;
 					if ((dx * dx + dy * dy) < minDst * minDst)
 					{
-						stage->mBalGrabbed = ball;
+						stage->mBallsInSlots[stage->mSlotSelected] = ball;
 						ball->mUpdatePhysics = false;
 						stage->mIsGrabbing = 2;
 						break;
@@ -150,10 +186,10 @@ void StageUpdatePhysics(SStage* stage)
 			Vec2f dst = stage->mHookPos;
 			dst.x -= stage->mAnchorPos.x;
 			dst.y -= stage->mAnchorPos.y;
-			if (stage->mBalGrabbed != NULL)
+			if (stage->mBallsInSlots[stage->mSlotSelected] != NULL)
 			{
-				stage->mBalGrabbed->mPos.x = stage->mHookPos.x;
-				stage->mBalGrabbed->mPos.y = stage->mHookPos.y;
+				stage->mBallsInSlots[stage->mSlotSelected]->mPos.x = stage->mHookPos.x;
+				stage->mBallsInSlots[stage->mSlotSelected]->mPos.y = stage->mHookPos.y;
 			}
 
 			if (ModuleSqr(&dst) < 100)
@@ -165,14 +201,30 @@ void StageUpdatePhysics(SStage* stage)
 	else
 	{
 		stage->mHookPos = stage->mAnchorPos;
-		if (stage->mBalGrabbed != NULL)
+		if (stage->mBallsInSlots[stage->mSlotSelected] != NULL)
 		{
-			stage->mBalGrabbed->mPos.x = stage->mHookPos.x;
-			stage->mBalGrabbed->mPos.y = stage->mHookPos.y;
+			stage->mBallsInSlots[stage->mSlotSelected]->mPos.x = stage->mHookPos.x;
+			stage->mBallsInSlots[stage->mSlotSelected]->mPos.y = stage->mHookPos.y;
 		}
 	}
 
-	// Update position
+	// Add new balls
+	if (stage->mTickNextSpawn <= stage->mTicks)
+	{
+		StageAddBall(stage, SPAWN_POINT_X, SPAWN_POINT_Y, 0.5f - (rand() / (RAND_MAX + 1.0f)), 5.0f, 1 + rand() % 2);
+
+		if (stage->mNumberBalls == stage->mMaxNumberBalls)
+		{
+			stage->mMaxBallsReached = true;
+			stage->mTickNextSpawn = stage->mTicks + 5 * 30; // 5 seconds
+		}
+		else
+		{
+			stage->mTickNextSpawn = stage->mTicks + stage->mSpawnMinPeriod + rand() % stage->mSpawnDeltaPeriod;
+		}
+	}
+
+	// Update balls
 	SBall* ball = stage->mBalls;
 	for (int i = 0; i < stage->mNumberBalls; i++, ball++)
 	{
@@ -293,13 +345,13 @@ void StageUpdatePhysics(SStage* stage)
 
 void StageUpdate(SStage* stage)
 {
+	stage->mTicks++;
 	StageUpdateInput(stage);
 	StageUpdatePhysics(stage);
 }
 
 void StageUpdateInput(SStage* stage)
 {
-
 	if (!stage->mIsGrabbing)
 	{
 		float deltaAngle = 0.5f*Game.mPd->system->getCrankChange();
@@ -315,62 +367,65 @@ void StageUpdateInput(SStage* stage)
 	PDButtons current;
 	PDButtons pushed;
 	Game.mPd->system->getButtonState(&current, &pushed, NULL);
-	if (current & kButtonRight)
+	if (pushed & kButtonRight)
 	{
 		if (stage->mIsGrabbing)
 		{
 			stage->mIsGrabbing = 0;
-			if (stage->mBalGrabbed != NULL)
+			if (stage->mBallsInSlots[stage->mSlotSelected] != NULL)
 			{
-				stage->mBalGrabbed->mUpdatePhysics = true;
-				stage->mBalGrabbed = NULL;
+				stage->mBallsInSlots[stage->mSlotSelected]->mUpdatePhysics = true;
+				stage->mBallsInSlots[stage->mSlotSelected] = NULL;
 			}
 		}
 		else
 		{
-			if (stage->mBalGrabbed != NULL)
+			if (stage->mBallsInSlots[stage->mSlotSelected] != NULL)
 			{
-				stage->mBalGrabbed->mUpdatePhysics = true;
-				stage->mBalGrabbed->mVel.x = stage->mAimDirection.x * SHOOT_SPEED;
-				stage->mBalGrabbed->mVel.y = stage->mAimDirection.y * SHOOT_SPEED;
-				stage->mBalGrabbed->mCanMerge = true;
-				stage->mBalGrabbed = NULL;
+				stage->mBallsInSlots[stage->mSlotSelected]->mUpdatePhysics = true;
+				stage->mBallsInSlots[stage->mSlotSelected]->mVel.x = stage->mAimDirection.x * SHOOT_SPEED;
+				stage->mBallsInSlots[stage->mSlotSelected]->mVel.y = stage->mAimDirection.y * SHOOT_SPEED;
+				stage->mBallsInSlots[stage->mSlotSelected]->mCanMerge = true;
+				stage->mBallsInSlots[stage->mSlotSelected] = NULL;
 			}
 		}
 	}
-	else if (current & kButtonLeft)
+	else if (pushed & kButtonLeft)
 	{
-		if (!stage->mIsGrabbing && stage->mBalGrabbed == NULL)
+		if (!stage->mIsGrabbing && stage->mBallsInSlots[stage->mSlotSelected] == NULL)
 		{
 			stage->mIsGrabbing = 1;
 		}
 	}
-	else if (current & kButtonUp)
+	else if (pushed & kButtonUp)
 	{
+		if (stage->mSlotSelected > 0)
+		{
+			stage->mSlotSelected--;
+			StageUpdateAimDirection(stage);
+		}
 	}
-	else if (current & kButtonDown)
+	else if (pushed & kButtonDown)
 	{
-	}
-	else
-	{
-	}
-
-	if (pushed & kButtonA)
-	{
-	}
-	else
-	{
+		if (stage->mSlotSelected < stage->mMaxSlots - 1)
+		{
+			stage->mSlotSelected++;
+			StageUpdateAimDirection(stage);
+		}
 	}
 }
 
 void StageAddBall(SStage* stage, float x , float y, float vx, float vy, int energy)
 {
 	stage->mNumberBalls++;
+	/*
+	Not needed: memory allocated on StageInit
 	if (stage->mNumberBalls > stage->mNumberBallsAllocated)
 	{
 		stage->mNumberBallsAllocated += 8;
 		stage->mBalls = realloc(stage->mBalls, stage->mNumberBallsAllocated * sizeof(SBall));
 	}
+	*/
 
 	SBall* ballNew = &stage->mBalls[stage->mNumberBalls - 1];
 	ballNew->mId = stage->mNextId;
@@ -417,4 +472,5 @@ void StageDeleteBall(SStage* stage, unsigned int id)
 		}
 	}
 	stage->mNumberBalls--;
+	stage->mMaxBallsReached = false;
 }
