@@ -11,9 +11,7 @@ typedef struct
 	SBall* mBalls;
 	int mNumberBalls;
 	int mNumberBallsAllocated;
-	LCDSprite* mSpriteBG;
 	int mScore;
-	LCDSprite* mSpriteGun;
 
 	Vec2f mAimDirection;
 	Vec2f mHookPos;
@@ -21,6 +19,8 @@ typedef struct
 	float mGunAngle;
 	int  mIsGrabbing;
 	SBall* mBalGrabbed;
+	SAnimatedSprite mAtomSelectedFX;
+	unsigned int mNextId;
 		
 } SStage;
 

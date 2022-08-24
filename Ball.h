@@ -10,6 +10,10 @@ typedef struct
 	Vec2f mPos;
 	bool mUpdatePhysics;
 	bool mCanMerge;
+	SAnimatedSprite mAnimatedSprite;
+	int mEnergy;
+	SAnimatedSprite mFXCanMerge;
+	unsigned int mId;
 } SBall;
 
 #endif

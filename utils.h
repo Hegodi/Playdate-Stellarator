@@ -11,36 +11,6 @@ inline float Clamp(float value, float minValue, float maxValue)
 	return value < minValue ? minValue : (value > maxValue ? maxValue : value);
 }
 
-extern LCDBitmap *loadImageAtPath(PlaydateAPI* pd,  const char *path);
-
-typedef struct  
-{
-	LCDBitmap** mBitmaps;
-	int mNumberFrames;
-	int mCurrentFrame;
-	int mFramesPerSprite;
-	int mFrameCount;
-	int mFlipFlag;
-	bool mLoop;
-	bool mHasfinished;
-} SAnimatedSprite;
-
-inline SAnimatedSprite CreateAnimationSprite(LCDBitmap** bitmaps, int numberFrames, int framesPerSprite)
-{
-	SAnimatedSprite animatedSprite;
-	animatedSprite.mBitmaps = bitmaps;
-	animatedSprite.mNumberFrames = numberFrames;
-	animatedSprite.mFramesPerSprite = framesPerSprite;
-	animatedSprite.mCurrentFrame = 0;
-	animatedSprite.mFrameCount = 0;
-	animatedSprite.mFlipFlag = kBitmapUnflipped;
-	animatedSprite.mLoop = true;
-	animatedSprite.mHasfinished = false;
-	return animatedSprite;
-}
-
-extern void UpdateAnimatedSprite(PlaydateAPI* pd, LCDSprite* sprite, SAnimatedSprite* animatedData);
-
 typedef struct
 {
 	float x;
@@ -69,5 +39,36 @@ inline Vec2f Perpendicular(Vec2f const* const v)
 	p.y = v->x;
 	return p;
 }
+
+
+extern LCDBitmap *loadImageAtPath(PlaydateAPI* pd,  const char *path);
+
+typedef struct  
+{
+	LCDBitmap** mBitmaps;
+	int mNumberFrames;
+	int mCurrentFrame;
+	int mFramesPerSprite;
+	int mFrameCount;
+	int mFlipFlag;
+	bool mLoop;
+	bool mHasfinished;
+} SAnimatedSprite;
+
+inline SAnimatedSprite CreateAnimationSprite(LCDBitmap** bitmaps, int numberFrames, int framesPerSprite)
+{
+	SAnimatedSprite animatedSprite;
+	animatedSprite.mBitmaps = bitmaps;
+	animatedSprite.mNumberFrames = numberFrames;
+	animatedSprite.mFramesPerSprite = framesPerSprite;
+	animatedSprite.mCurrentFrame = 0;
+	animatedSprite.mFrameCount = 0;
+	animatedSprite.mFlipFlag = kBitmapUnflipped;
+	animatedSprite.mLoop = true;
+	animatedSprite.mHasfinished = false;
+	return animatedSprite;
+}
+
+extern void DrawAnimatedSprite(PlaydateAPI* pd, SAnimatedSprite* animatedData, float x, float y);
 
 #endif

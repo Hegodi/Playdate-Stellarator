@@ -13,7 +13,7 @@ LCDBitmap* loadImageAtPath(PlaydateAPI* pd, const char* path)
 	return img;
 }
 
-void UpdateAnimatedSprite(PlaydateAPI* pd, LCDSprite* sprite, SAnimatedSprite* animatedData)
+void DrawAnimatedSprite(PlaydateAPI* pd, SAnimatedSprite* animatedData, float x, float y)
 {
 	if (animatedData->mHasfinished)
 	{
@@ -30,8 +30,8 @@ void UpdateAnimatedSprite(PlaydateAPI* pd, LCDSprite* sprite, SAnimatedSprite* a
 		else
 		{
 			animatedData->mCurrentFrame = (animatedData->mCurrentFrame + 1) % animatedData->mNumberFrames;
-			pd->sprite->setImage(sprite, animatedData->mBitmaps[animatedData->mCurrentFrame], animatedData->mFlipFlag);
 			animatedData->mFrameCount = 0;
 		}
 	}
+	pd->graphics->drawBitmap(animatedData->mBitmaps[animatedData->mCurrentFrame], x, y, animatedData->mFlipFlag);
 }

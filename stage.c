@@ -10,16 +10,18 @@
 
 #define AIM_ANGLE_MAX 60.0f
 #define CANNON_LENGTH 40
-#define GUN_POS_X 20
+#define GUN_POS_X 32
 #define GUN_POS_Y SCREEN_HEIGHT / 2
 #define HOOK_SPEED 20.0f
 #define HOOK_RADIUS 20
 #define SHOOT_SPEED 10.0f
 #define ELASTIC_COEFFICIENT_WALL 0.9f
 
-extern void StageAddBall(SStage* stage, float x, float y, float vx, float vy);
+extern void StageAddBall(SStage* stage, float x, float y, float vx, float vy, int energy);
+extern void StageDeleteBall(SStage* stage, unsigned int id);
 extern void StageUpdateInput(SStage* stage);
 extern void StageUpdateAimDirection(SStage* stage);
+extern void StageSetupAtom(SBall* ball, int energy);
 
 void StageInit(SStage* stage)
 {
@@ -33,27 +35,17 @@ void StageInit(SStage* stage)
 	stage->mBalls = NULL;
 	stage->mScore = 0;
 
-	stage->mSpriteBG = Game.mPd->sprite->newSprite();
-	Game.mPd->sprite->setImage(stage->mSpriteBG, Game.mResources.mStageBackground, kBitmapUnflipped);
-	Game.mPd->sprite->setZIndex(stage->mSpriteBG, 100);
-	Game.mPd->sprite->addSprite(stage->mSpriteBG);
-	Game.mPd->sprite->moveTo(stage->mSpriteBG, SCREEN_WIDTH/2, SCREEN_HEIGHT/2);
-
-	//stage->mSpriteGun = Game.mPd->sprite->newSprite();
-	//Game.mPd->sprite->setImage(stage->mSpriteGun, Game.mResources.mGun, kBitmapUnflipped);
-	//Game.mPd->sprite->setZIndex(stage->mSpriteGun, 350);
-	//Game.mPd->sprite->addSprite(stage->mSpriteGun);
-	//Game.mPd->sprite->moveTo(stage->mSpriteGun, 40, SCREEN_HEIGHT/2);
-
 	stage->mGunAngle = 0.01f;
 	stage->mIsGrabbing = false;
 	StageUpdateAimDirection(stage);
 	stage->mHookPos = stage->mAnchorPos;
 	stage->mBalGrabbed = NULL;
 
-	StageAddBall(stage, 100.0f, SCREEN_HEIGHT*0.5f, 5.0f, 2.0f);
-	StageAddBall(stage, 300.0f, SCREEN_HEIGHT*0.5f, 3.0f, 1.0f);
-	StageAddBall(stage, 200.0f, SCREEN_HEIGHT*0.5f, 2.0f, 1.0f);
+	StageAddBall(stage, 100.0f, SCREEN_HEIGHT*0.5f, 5.0f, 2.0f, 1);
+	StageAddBall(stage, 300.0f, SCREEN_HEIGHT*0.5f, 3.0f, 1.0f, 1);
+	StageAddBall(stage, 200.0f, SCREEN_HEIGHT*0.5f, 2.0f, 1.0f, 4);
+
+	stage->mNextId = 1;
 }
 
 void StageClear(SStage* stage)
@@ -62,11 +54,6 @@ void StageClear(SStage* stage)
 	{
 		return;
 	}
-
-	Game.mPd->sprite->removeSprite(stage->mSpriteBG);
-	Game.mPd->sprite->freeSprite(stage->mSpriteBG);
-	Game.mPd->sprite->removeSprite(stage->mSpriteGun);
-	Game.mPd->sprite->freeSprite(stage->mSpriteGun);
 
 	stage->mNumberBalls = 0;
 	stage->mNumberBallsAllocated = 0.0001f;
@@ -82,9 +69,8 @@ void StageDraw(SStage* stage)
 	Game.mPd->graphics->clear(1);
 
 	Game.mPd->graphics->drawBitmap(Game.mResources.mStageBackground, 0, 0, kBitmapUnflipped);
-
+	Game.mPd->graphics->drawRotatedBitmap(Game.mResources.mGunFrame[0], GUN_POS_X, GUN_POS_Y, 90.0f, 0.5f, 0.5f, 1.0f, 1.0f, kBitmapUnflipped);
 	Game.mPd->graphics->drawRotatedBitmap(Game.mResources.mGun, GUN_POS_X, GUN_POS_Y, stage->mGunAngle + 90.0f, 0.5f, 0.5f, 1.0f, 1.0f);
-	Game.mPd->graphics->drawLine(stage->mAnchorPos.x, stage->mAnchorPos.y, stage->mAnchorPos.x + 10*stage->mAimDirection.x, stage->mAnchorPos.y + 10*stage->mAimDirection.y, 1, 0);
 
 	if (stage->mIsGrabbing)
 	{
@@ -95,8 +81,17 @@ void StageDraw(SStage* stage)
 	SBall* ball = stage->mBalls;
 	for (int i=0; i<stage->mNumberBalls; i++, ball++)
 	{
-		Game.mPd->graphics->drawBitmap(Game.mResources.mBall, ball->mPos.x - ball->mRadius, ball->mPos.y - ball->mRadius, kBitmapUnflipped);
+		if (ball->mCanMerge)
+		{
+			DrawAnimatedSprite(Game.mPd, &ball->mFXCanMerge, ball->mPos.x - 32, ball->mPos.y - 32);
+		}
+		DrawAnimatedSprite(Game.mPd, &ball->mAnimatedSprite, ball->mPos.x - 16, ball->mPos.y - 16);
 	}
+
+	static char buffer[128];
+	sprintf(buffer, "Score: %d", stage->mScore);
+	Game.mPd->graphics->setFont(Game.mResources.mFont);
+	Game.mPd->graphics->drawText(buffer, strlen(buffer), kASCIIEncoding, 10, 10);
 }
 
 void StageUpdateAimDirection(SStage* stage)
@@ -199,6 +194,7 @@ void StageUpdatePhysics(SStage* stage)
 			continue;;
 		}
 
+		bool hasMerged = false;
 		for (int j = i+1; j < stage->mNumberBalls; j++)
 		{
 			SBall* b2 = &stage->mBalls[j];
@@ -213,50 +209,83 @@ void StageUpdatePhysics(SStage* stage)
 			float overlapDst = b1->mRadius + b2->mRadius;
 			if (dst2 < overlapDst * overlapDst)
 			{
-				float dst = sqrt(dst2);
-				Vec2f n = d;
-				n.x /= dst;
-				n.y /= dst;
-				Vec2f t = Perpendicular(&n);
-				float v1n = Dot(&b1->mVel, &n);
-				float v2n = Dot(&b2->mVel, &n);
-				float v1t = Dot(&b1->mVel, &t);
-				float v2t = Dot(&b2->mVel, &t);
-
-				// Extra safe to avoid duplicated collisions
-				if (v2n - v1n < 0)
+				if ( (b1->mCanMerge || b2->mCanMerge) && (b1->mEnergy == b2->mEnergy))
 				{
-					b1->mVel.x = t.x * v1t + n.x * v2n;
-					b1->mVel.y = t.y * v1t + n.y * v2n;
+					// Merge
+					if (b1->mEnergy == 4)
+					{
+						StageDeleteBall(stage, b1->mId);
+						StageDeleteBall(stage, b2->mId);
+					}
+					else
+					{
+						if (b1->mCanMerge)
+						{
+							StageSetupAtom(b2, 2 * b1->mEnergy);
+							StageDeleteBall(stage, b1->mId);
+						}
+						else if (b2->mCanMerge)
+						{
+							StageSetupAtom(b1, 2 * b2->mEnergy);
+							StageDeleteBall(stage, b2->mId);
+						}
+					}
+					hasMerged = true;
+					break;
+				}
+				else
+				{
+					float dst = sqrt(dst2);
+					Vec2f n = d;
+					n.x /= dst;
+					n.y /= dst;
+					Vec2f t = Perpendicular(&n);
+					float v1n = Dot(&b1->mVel, &n);
+					float v2n = Dot(&b2->mVel, &n);
+					float v1t = Dot(&b1->mVel, &t);
+					float v2t = Dot(&b2->mVel, &t);
+					b1->mCanMerge = false;
+					b2->mCanMerge = false;
 
-					b2->mVel.x = t.x * v2t + n.x * v1n;
-					b2->mVel.y = t.y * v2t + n.y * v1n;
+					// Extra safe to avoid duplicated collisions
+					if (v2n - v1n < 0)
+					{
+						b1->mVel.x = t.x * v1t + n.x * v2n;
+						b1->mVel.y = t.y * v1t + n.y * v2n;
+
+						b2->mVel.x = t.x * v2t + n.x * v1n;
+						b2->mVel.y = t.y * v2t + n.y * v1n;
+					}
 				}
 			}
 		}
 
-		if (b1->mUpdatePhysics)
+		if (!hasMerged)
 		{
 			if (b1->mPos.x < GAMEPLAY_XMIN + b1->mRadius && b1->mVel.x < 0.0f)
 			{
 				b1->mPos.x = GAMEPLAY_XMIN + b1->mRadius;
 				b1->mVel.x *= -ELASTIC_COEFFICIENT_WALL;
+				b1->mCanMerge = false;
 			}
 			else if (b1->mPos.x > GAMEPLAY_XMAX - b1->mRadius && b1->mVel.x > 0.0f)
 			{
 				b1->mPos.x = GAMEPLAY_XMAX - b1->mRadius;;
 				b1->mVel.x *= -ELASTIC_COEFFICIENT_WALL;
+				b1->mCanMerge = false;
 			}
 
 			if (b1->mPos.y < GAMEPLAY_YMIN + b1->mRadius && b1->mVel.y < 0.0f)
 			{
 				b1->mPos.y = GAMEPLAY_YMIN + b1->mRadius;
 				b1->mVel.y *= -ELASTIC_COEFFICIENT_WALL;
+				b1->mCanMerge = false;
 			}
 			else if (b1->mPos.y > GAMEPLAY_YMAX - b1->mRadius && b1->mVel.y > 0.0f)
 			{
 				b1->mPos.y = GAMEPLAY_YMAX - b1->mRadius;
 				b1->mVel.y *= -ELASTIC_COEFFICIENT_WALL;
+				b1->mCanMerge = false;
 			}
 		}
 	}
@@ -273,7 +302,7 @@ void StageUpdateInput(SStage* stage)
 
 	if (!stage->mIsGrabbing)
 	{
-		float deltaAngle = 0.1f* Game.mPd->system->getCrankChange();
+		float deltaAngle = 0.5f*Game.mPd->system->getCrankChange();
 		if (deltaAngle > 0.0f || deltaAngle < 0.0f)
 		{
 			stage->mGunAngle += deltaAngle;
@@ -304,6 +333,7 @@ void StageUpdateInput(SStage* stage)
 				stage->mBalGrabbed->mUpdatePhysics = true;
 				stage->mBalGrabbed->mVel.x = stage->mAimDirection.x * SHOOT_SPEED;
 				stage->mBalGrabbed->mVel.y = stage->mAimDirection.y * SHOOT_SPEED;
+				stage->mBalGrabbed->mCanMerge = true;
 				stage->mBalGrabbed = NULL;
 			}
 		}
@@ -333,7 +363,7 @@ void StageUpdateInput(SStage* stage)
 	}
 }
 
-void StageAddBall(SStage* stage, float x , float y, float vx, float vy)
+void StageAddBall(SStage* stage, float x , float y, float vx, float vy, int energy)
 {
 	stage->mNumberBalls++;
 	if (stage->mNumberBalls > stage->mNumberBallsAllocated)
@@ -343,12 +373,48 @@ void StageAddBall(SStage* stage, float x , float y, float vx, float vy)
 	}
 
 	SBall* ballNew = &stage->mBalls[stage->mNumberBalls - 1];
-	ballNew->mRadius = 16.0f;
+	ballNew->mId = stage->mNextId;
+	stage->mNextId++;
 	ballNew->mPos.x = x;
 	ballNew->mPos.y = y;
 	ballNew->mVel.x = vx;
 	ballNew->mVel.y = vy;
 	ballNew->mUpdatePhysics = true;
 	ballNew->mCanMerge = false;
+	ballNew->mFXCanMerge = CreateAnimationSprite(Game.mResources.mAtomSelectedFX, 2, 2);
+	StageSetupAtom(ballNew, energy);
+	
 }
 
+void StageSetupAtom(SBall* ball, int energy)
+{
+	ball->mEnergy = energy;
+	if (energy == 1)
+	{
+		ball->mRadius = 8.0f;
+		ball->mAnimatedSprite = CreateAnimationSprite(Game.mResources.mAtom1, 4, 8);
+	}
+	else if (energy == 2)
+	{
+		ball->mRadius = 11.0f;
+		ball->mAnimatedSprite = CreateAnimationSprite(Game.mResources.mAtom2, 4, 8);
+	}
+	else if (energy == 4)
+	{
+		ball->mRadius = 14.0f;
+		ball->mAnimatedSprite = CreateAnimationSprite(Game.mResources.mAtom4, 4, 8);
+	}
+}
+
+void StageDeleteBall(SStage* stage, unsigned int id)
+{
+	for (int i=0; i<stage->mNumberBalls; i++)
+	{
+		if (stage->mBalls[i].mId == id)
+		{
+			stage->mBalls[i] = stage->mBalls[stage->mNumberBalls - 1];
+			break;
+		}
+	}
+	stage->mNumberBalls--;
+}
