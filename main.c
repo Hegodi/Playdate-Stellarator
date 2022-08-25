@@ -16,7 +16,7 @@ int eventHandler(PlaydateAPI* playdate, PDSystemEvent event, uint32_t arg)
 		playdate->display->setRefreshRate(30);
 		playdate->system->setUpdateCallback(Update, NULL);
 	}
-	else if (event = kEventTerminate)
+	else if (event == kEventTerminate)
 	{
 		CleanupGame();
 	}

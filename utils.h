@@ -55,20 +55,44 @@ typedef struct
 	bool mHasfinished;
 } SAnimatedSprite;
 
+inline void ResetAnimationSprite(SAnimatedSprite* animatedSprite)
+{
+	animatedSprite->mCurrentFrame = 0;
+	animatedSprite->mFrameCount = 0;
+	animatedSprite->mHasfinished = false;
+}
+
+
 inline SAnimatedSprite CreateAnimationSprite(LCDBitmap** bitmaps, int numberFrames, int framesPerSprite)
 {
 	SAnimatedSprite animatedSprite;
 	animatedSprite.mBitmaps = bitmaps;
 	animatedSprite.mNumberFrames = numberFrames;
 	animatedSprite.mFramesPerSprite = framesPerSprite;
-	animatedSprite.mCurrentFrame = 0;
-	animatedSprite.mFrameCount = 0;
 	animatedSprite.mFlipFlag = kBitmapUnflipped;
 	animatedSprite.mLoop = true;
-	animatedSprite.mHasfinished = false;
+	ResetAnimationSprite(&animatedSprite);
 	return animatedSprite;
 }
 
-extern void DrawAnimatedSprite(PlaydateAPI* pd, SAnimatedSprite* animatedData, float x, float y);
+inline void DrawText(PlaydateAPI* pd, const char* str, float x, float y, LCDFont* font, bool centered)
+{
+	int strLength = strlen(str);
+	if (font != NULL)
+	{
+		pd->graphics->setFont(font);
+		if (centered)
+		{
+			int txtWidth = pd->graphics->getTextWidth(font, str, strLength, kASCIIEncoding, 0);
+			pd->graphics->drawText(str, strLength, kASCIIEncoding, x - txtWidth / 2, y);
+		}
+	}
+	else
+	{
+		pd->graphics->drawText(str, strLength, kASCIIEncoding, x, y);
+	}
+}
+
+void DrawAnimatedSprite(PlaydateAPI* pd, SAnimatedSprite* animatedData, float x, float y);
 
 #endif

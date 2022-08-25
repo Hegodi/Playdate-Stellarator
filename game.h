@@ -8,16 +8,38 @@
 #define SCREEN_WIDTH 400
 #define SCREEN_HEIGHT 240
 
+typedef enum {EMode_SplashScreen, EMode_Menu, EMode_InGame} EMode;
 typedef struct
 {
 	PlaydateAPI* mPd;
+	EMode mMode;
+
 	struct
 	{
+		int mIndexSel;
+	} mMenu;
+
+	struct
+	{
+		float mX; 
+		float mY;
+		int mTicks;
+		int mFlag;
+		SBall* balls;
+	} mSplash;
+
+	struct
+	{
+		LCDBitmap* mMenuBackground;
+		LCDBitmap* mSplashBackground;
+		LCDBitmap* mSplashTitle;
 		LCDBitmap* mStageBackground;
-		LCDBitmap** mAtom1;
-		LCDBitmap** mAtom2;
-		LCDBitmap** mAtom4;
+		LCDBitmap** mStageDamage;
+		LCDBitmap* mMarkerMenu;
+		LCDBitmap** mBalls;
 		LCDBitmap** mAtomSelectedFX;
+		LCDBitmap** mExplosionFX;
+		LCDBitmap* mSocket;
 
 		LCDFont* mFont;
 	} mResources;

@@ -5,8 +5,11 @@
 #include "utils.h"
 #include "Ball.h"
 
+#define MAX_EXPLOSIONS_FX 3
+
 typedef struct  
 {
+	const char* mName;
 	int mMaxSlots;
 	int mMaxBalls;
 	int mSpawnMinPeriod;
@@ -16,6 +19,9 @@ typedef struct
 
 typedef struct 
 {
+	const char* mLevel;
+	int mCountdown;
+	bool mIsPaused;
 	bool mIsGameOver;
 	SBall* mBalls;
 	int mNumberBalls;
@@ -37,11 +43,15 @@ typedef struct
 	SAnimatedSprite mAtomSelectedFX;
 	bool mMaxBallsReached;
 	unsigned int mNextId;
+
+	SAnimatedSprite mExplosionsFX[MAX_EXPLOSIONS_FX];
+	Vec2f mPosExplosions[MAX_EXPLOSIONS_FX];
+	bool mExplosionsActive[MAX_EXPLOSIONS_FX];
+	int mLastExplosionInd;
 		
 } SStage;
 
 void StageInit(SStage* stage, SStageConfig* config);
 void StageClear(SStage* stage);
-void StageDraw(SStage* stage);
 void StageUpdate(SStage* stage);
 #endif

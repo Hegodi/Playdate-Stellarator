@@ -3,13 +3,13 @@
 #include "utils.h"
 #include <math.h>
 
-#define  GAMEPLAY_XMIN 56
+#define  GAMEPLAY_XMIN 71
 #define  GAMEPLAY_XMAX SCREEN_WIDTH - 7
 #define  GAMEPLAY_YMIN 7
 #define  GAMEPLAY_YMAX SCREEN_HEIGHT - 7
 
 #define AIM_ANGLE_MAX 60.0f
-#define SOCKET_POS_X 19
+#define SOCKET_POS_X 25
 #define SOCKET_SIZE 40
 #define HOOK_SPEED 20.0f
 #define HOOK_RADIUS 20
@@ -18,11 +18,14 @@
 #define SPAWN_POINT_X 375
 #define SPAWN_POINT_Y 32
 
-extern void StageAddBall(SStage* stage, float x, float y, float vx, float vy, int energy);
-extern void StageDeleteBall(SStage* stage, unsigned int id);
-extern void StageUpdateInput(SStage* stage);
-extern void StageUpdateAimDirection(SStage* stage);
-extern void StageSetupAtom(SBall* ball, int energy);
+static int Points[] = { 0, 4, 8, 16, 32, 64, 128 };
+
+void StageAddBall(SStage* stage, float x, float y, float vx, float vy, int energy);
+void StageDeleteBall(SStage* stage, unsigned int id);
+void StageUpdateInput(SStage* stage);
+void StageUpdateAimDirection(SStage* stage);
+void StageSetupAtom(SBall* ball, int energy);
+void StageDraw(SStage* stage);
 
 void StageInit(SStage* stage, SStageConfig* config)
 {
@@ -31,8 +34,11 @@ void StageInit(SStage* stage, SStageConfig* config)
 		return;
 	}
 
+	stage->mIsPaused = false;
+	stage->mLevel = config->mName;
+	stage->mCountdown = 3;
 	stage->mTicks = 0;
-	stage->mTickNextSpawn = 10;
+	stage->mTickNextSpawn = 30;
 
 	stage->mScore = 0;
 
@@ -54,6 +60,14 @@ void StageInit(SStage* stage, SStageConfig* config)
 	stage->mSpawnMinPeriod = config->mSpawnMinPeriod;
 	stage->mSpawnDeltaPeriod = config->mSpawnMaxPeriod - config->mSpawnMinPeriod;
 	stage->mMaxBallsReached = false;
+
+	for (int i=0; i<MAX_EXPLOSIONS_FX; i++)
+	{
+		stage->mExplosionsFX[i] = CreateAnimationSprite(Game.mResources.mExplosionFX, 5, 2);
+		stage->mExplosionsFX[i].mLoop = false;
+		stage->mExplosionsActive[i] = false;
+	}
+	stage->mLastExplosionInd = 0;
 
 	stage->mNextId = 1;
 	StageUpdateAimDirection(stage);
@@ -83,32 +97,22 @@ void StageDraw(SStage* stage)
 
 	Game.mPd->graphics->drawBitmap(Game.mResources.mStageBackground, 0, 0, kBitmapUnflipped);
 	int y = SCREEN_HEIGHT * 0.5f - stage->mMaxSlots * SOCKET_SIZE / 2;
+	if (stage->mIsGrabbing)
+	{
+		Game.mPd->graphics->drawLine(stage->mAnchorPos.x, stage->mAnchorPos.y, stage->mHookPos.x, stage->mHookPos.y, 2, 0);
+		Game.mPd->graphics->drawEllipse(stage->mHookPos.x- HOOK_RADIUS/2, stage->mHookPos.y- HOOK_RADIUS/2, HOOK_RADIUS, HOOK_RADIUS, 1, 0, 360, 0);
+	}
+
 	for (int i = 0; i < stage->mMaxSlots; i++, y+=SOCKET_SIZE)
 	{
-		if (stage->mBallsInSlots[i] != NULL)
-		{
-			SBall* ball = stage->mBallsInSlots[i];
-			DrawAnimatedSprite(Game.mPd, &ball->mAnimatedSprite, ball->mPos.x - 16, ball->mPos.y - 16);
-		}
-		else
-		{
-			//Game.mPd->graphics->drawRect(SOCKET_POS_X-16, y, 32, 32, kColorBlack);
-			Game.mPd->graphics->fillEllipse(SOCKET_POS_X-16, y, 32, 32, 0, 360, kColorBlack);
-		}
 
 		if (stage->mSlotSelected == i)
 		{
 			Game.mPd->graphics->drawLine(stage->mAnchorPos.x, stage->mAnchorPos.y, stage->mAnchorPos.x + 64*stage->mAimDirection.x, stage->mAnchorPos.y + 64*stage->mAimDirection.y, 1, kColorBlack);
 		}
+		Game.mPd->graphics->drawBitmap(Game.mResources.mSocket, SOCKET_POS_X-16, y, kBitmapUnflipped);
 	}
 
-
-
-	if (stage->mIsGrabbing)
-	{
-		Game.mPd->graphics->drawLine(stage->mAnchorPos.x, stage->mAnchorPos.y, stage->mHookPos.x, stage->mHookPos.y, 2, 0);
-		Game.mPd->graphics->drawEllipse(stage->mHookPos.x- HOOK_RADIUS/2, stage->mHookPos.y- HOOK_RADIUS/2, HOOK_RADIUS, HOOK_RADIUS, 2, 0, 360, 0);
-	}
 
 	SBall* ball = stage->mBalls;
 	for (int i=0; i<stage->mNumberBalls; i++, ball++)
@@ -117,16 +121,43 @@ void StageDraw(SStage* stage)
 		{
 			DrawAnimatedSprite(Game.mPd, &ball->mFXCanMerge, ball->mPos.x - 32, ball->mPos.y - 32);
 		}
-		DrawAnimatedSprite(Game.mPd, &ball->mAnimatedSprite, ball->mPos.x - 16, ball->mPos.y - 16);
+		Game.mPd->graphics->drawBitmap(Game.mResources.mBalls[ball->mEnergy - 1], ball->mPos.x - 16, ball->mPos.y - 16, kBitmapUnflipped);
+	}
+
+	for (int i = 0; i < MAX_EXPLOSIONS_FX; i++)
+	{
+		if (stage->mExplosionsActive[i])
+		{
+			DrawAnimatedSprite(Game.mPd, &stage->mExplosionsFX[i], stage->mPosExplosions[i].x, stage->mPosExplosions[i].y);
+			stage->mExplosionsActive[i] = !stage->mExplosionsFX[i].mHasfinished;
+		}
 	}
 
 	int secondsRaw = stage->mTicks / 30;
 	int minutes = secondsRaw/ 60;
 	int seconds = secondsRaw % 60;
-	static char buffer[128];
-	sprintf(buffer, "%02d:%02d\n%03d\n%d",minutes, seconds, stage->mScore, stage->mNumberBalls);
 	Game.mPd->graphics->setFont(Game.mResources.mFont);
-	Game.mPd->graphics->drawText(buffer, strlen(buffer), kASCIIEncoding, 2, 2);
+
+	static char buffer[128];
+	//sprintf(buffer, "%s\n%02d:%02d\n%03d", stage->mLevel, minutes, seconds, stage->mScore);
+	sprintf(buffer, "%s\n%02d:%02d\n%03d", stage->mLevel, minutes, seconds, stage->mScore);
+	Game.mPd->graphics->drawText(buffer, strlen(buffer), kASCIIEncoding, 6, 12);
+
+	sprintf(buffer, "%02d", stage->mNumberBalls);
+	Game.mPd->graphics->drawText(buffer, strlen(buffer), kASCIIEncoding, 6, SCREEN_HEIGHT-40);
+
+	if (stage->mIsGameOver)
+	{
+		Game.mPd->graphics->drawBitmap(Game.mResources.mStageDamage[0], 0, 0, kBitmapUnflipped);
+	}
+	else
+	{
+		int ballsLeft = stage->mMaxNumberBalls - stage->mNumberBalls;
+		if (ballsLeft < 3)
+		{
+			Game.mPd->graphics->drawBitmap(Game.mResources.mStageDamage[ballsLeft + 1], 0, 0, kBitmapUnflipped);
+		}
+	}
 }
 
 void StageUpdateAimDirection(SStage* stage)
@@ -150,7 +181,7 @@ void StageUpdatePhysics(SStage* stage)
 			Vec2f dst = stage->mHookPos;
 			dst.x -= stage->mAnchorPos.x;
 			dst.y -= stage->mAnchorPos.y;
-			if (ModuleSqr(&dst) > 300 * 300)
+			if (ModuleSqr(&dst) > 1000000)
 			{
 				stage->mIsGrabbing = 2;
 			}
@@ -211,16 +242,23 @@ void StageUpdatePhysics(SStage* stage)
 	// Add new balls
 	if (stage->mTickNextSpawn <= stage->mTicks)
 	{
-		StageAddBall(stage, SPAWN_POINT_X, SPAWN_POINT_Y, 0.5f - (rand() / (RAND_MAX + 1.0f)), 5.0f, 1 + rand() % 2);
-
 		if (stage->mNumberBalls == stage->mMaxNumberBalls)
 		{
-			stage->mMaxBallsReached = true;
-			stage->mTickNextSpawn = stage->mTicks + 5 * 30; // 5 seconds
+			stage->mIsGameOver = true;
 		}
 		else
 		{
-			stage->mTickNextSpawn = stage->mTicks + stage->mSpawnMinPeriod + rand() % stage->mSpawnDeltaPeriod;
+			StageAddBall(stage, SPAWN_POINT_X, SPAWN_POINT_Y, -(1.0f + rand() / (RAND_MAX + 1.0f)), 5.0f, 1 + rand() % 2);
+
+			if (stage->mNumberBalls == stage->mMaxNumberBalls)
+			{
+				stage->mMaxBallsReached = true;
+				stage->mTickNextSpawn = stage->mTicks + 5 * 30; // 5 seconds
+			}
+			else
+			{
+				stage->mTickNextSpawn = stage->mTicks + stage->mSpawnMinPeriod + rand() % stage->mSpawnDeltaPeriod;
+			}
 		}
 	}
 
@@ -264,7 +302,15 @@ void StageUpdatePhysics(SStage* stage)
 				if ( (b1->mCanMerge || b2->mCanMerge) && (b1->mEnergy == b2->mEnergy))
 				{
 					// Merge
-					if (b1->mEnergy == 4)
+					stage->mScore += Points[b1->mEnergy];
+					int ind = (stage->mLastExplosionInd + 1) % MAX_EXPLOSIONS_FX;
+					stage->mPosExplosions[ind].x = (b1->mPos.x + b2->mPos.x) * 0.5f - 32;
+					stage->mPosExplosions[ind].y = (b1->mPos.y + b2->mPos.y) * 0.5f - 32;
+					stage->mExplosionsActive[ind] = true;
+					ResetAnimationSprite(&stage->mExplosionsFX[ind]);
+					stage->mLastExplosionInd = ind;
+
+					if (b1->mEnergy == 6)
 					{
 						StageDeleteBall(stage, b1->mId);
 						StageDeleteBall(stage, b2->mId);
@@ -273,13 +319,19 @@ void StageUpdatePhysics(SStage* stage)
 					{
 						if (b1->mCanMerge)
 						{
-							StageSetupAtom(b2, 2 * b1->mEnergy);
+							Vec2f vel = b1->mVel;
+							StageSetupAtom(b2, b1->mEnergy+1);
 							StageDeleteBall(stage, b1->mId);
+							b2->mVel.x += vel.x;
+							b2->mVel.y += vel.y;
 						}
 						else if (b2->mCanMerge)
 						{
-							StageSetupAtom(b1, 2 * b2->mEnergy);
+							Vec2f vel = b2->mVel;
+							StageSetupAtom(b1, b2->mEnergy+1);
 							StageDeleteBall(stage, b2->mId);
+							b1->mVel.x += vel.x;
+							b1->mVel.y += vel.y;
 						}
 					}
 					hasMerged = true;
@@ -345,13 +397,86 @@ void StageUpdatePhysics(SStage* stage)
 
 void StageUpdate(SStage* stage)
 {
-	stage->mTicks++;
-	StageUpdateInput(stage);
-	StageUpdatePhysics(stage);
+	if (stage->mIsPaused)
+	{
+		StageDraw(stage);
+		int x = (SCREEN_WIDTH - GAMEPLAY_XMIN) / 2 + GAMEPLAY_XMIN;
+		Game.mPd->graphics->fillRect(x - 100, 60, 200, 100, kColorWhite);
+		Game.mPd->graphics->drawRect(x - 100, 60, 200, 100, kColorBlack);
+		static char buffer[128];
+		DrawText(Game.mPd, "PAUSE", x, 100, Game.mResources.mFont, true);
+		DrawText(Game.mPd, "Press A to exit", x, 130, Game.mResources.mFont, true);
+		DrawText(Game.mPd, "Press B to resume", x, 150, Game.mResources.mFont, true);
+		PDButtons current;
+		PDButtons pushed;
+		Game.mPd->system->getButtonState(&current, &pushed, NULL);
+
+		if (pushed & kButtonA)
+		{
+			Game.mMode = EMode_Menu;
+		}
+		if (pushed & kButtonB)
+		{
+			stage->mIsPaused = false;
+		}
+		return;
+	}
+
+	if (stage->mCountdown < 0)
+	{
+		if (stage->mIsGameOver)
+		{
+			StageDraw(stage);
+			int x = (SCREEN_WIDTH - GAMEPLAY_XMIN) / 2 + GAMEPLAY_XMIN;
+			Game.mPd->graphics->fillRect(x - 60, 90, 120, 60, kColorWhite);
+			Game.mPd->graphics->drawRect(x - 60, 90, 120, 60, kColorBlack);
+			static char buffer[128];
+			DrawText(Game.mPd, "Game Over", x, 100, Game.mResources.mFont, true);
+			sprintf(buffer, "Score: %d", stage->mScore);
+			DrawText(Game.mPd, buffer, x, 120, Game.mResources.mFont, true);
+		}
+		else
+		{
+			stage->mTicks++;
+			StageUpdateInput(stage);
+			StageUpdatePhysics(stage);
+			StageDraw(stage);
+		}
+	}
+	else
+	{
+		stage->mTicks++;
+		StageDraw(stage);
+		int x = (SCREEN_WIDTH - GAMEPLAY_XMIN) / 2 + GAMEPLAY_XMIN;
+		Game.mPd->graphics->fillRect(x - 40, 90, 80, 40, kColorWhite);
+		Game.mPd->graphics->drawRect(x - 40, 90, 80, 40, kColorBlack);
+		if (stage->mCountdown > 0)
+		{
+			static char buffer[128];
+			DrawText(Game.mPd, "Ready", x, 95, Game.mResources.mFont, true);
+			sprintf(buffer, "%d", stage->mCountdown);
+			DrawText(Game.mPd, buffer, x, 110, Game.mResources.mFont, true);
+		}
+		else
+		{
+			DrawText(Game.mPd, "Go!", x, 100, Game.mResources.mFont, true);
+		}
+
+		if (stage->mTicks > 30)
+		{
+			stage->mCountdown--;
+			stage->mTicks = 0;
+		}
+	}
+
 }
 
 void StageUpdateInput(SStage* stage)
 {
+	PDButtons current;
+	PDButtons pushed;
+	Game.mPd->system->getButtonState(&current, &pushed, NULL);
+
 	if (!stage->mIsGrabbing)
 	{
 		float deltaAngle = 0.5f*Game.mPd->system->getCrankChange();
@@ -364,9 +489,6 @@ void StageUpdateInput(SStage* stage)
 		}
 	}
 
-	PDButtons current;
-	PDButtons pushed;
-	Game.mPd->system->getButtonState(&current, &pushed, NULL);
 	if (pushed & kButtonRight)
 	{
 		if (stage->mIsGrabbing)
@@ -388,16 +510,13 @@ void StageUpdateInput(SStage* stage)
 				stage->mBallsInSlots[stage->mSlotSelected]->mCanMerge = true;
 				stage->mBallsInSlots[stage->mSlotSelected] = NULL;
 			}
+			else
+			{
+				stage->mIsGrabbing = 1;
+			}
 		}
 	}
-	else if (pushed & kButtonLeft)
-	{
-		if (!stage->mIsGrabbing && stage->mBallsInSlots[stage->mSlotSelected] == NULL)
-		{
-			stage->mIsGrabbing = 1;
-		}
-	}
-	else if (pushed & kButtonUp)
+	else if (pushed & kButtonUp && stage->mIsGrabbing == 0)
 	{
 		if (stage->mSlotSelected > 0)
 		{
@@ -405,13 +524,17 @@ void StageUpdateInput(SStage* stage)
 			StageUpdateAimDirection(stage);
 		}
 	}
-	else if (pushed & kButtonDown)
+	else if (pushed & kButtonDown && stage->mIsGrabbing == 0)
 	{
 		if (stage->mSlotSelected < stage->mMaxSlots - 1)
 		{
 			stage->mSlotSelected++;
 			StageUpdateAimDirection(stage);
 		}
+	}
+	else if (pushed & kButtonB)
+	{
+		stage->mIsPaused = true;
 	}
 }
 
@@ -443,21 +566,29 @@ void StageAddBall(SStage* stage, float x , float y, float vx, float vy, int ener
 
 void StageSetupAtom(SBall* ball, int energy)
 {
+	if (energy < 1 || energy > 6)
+	{
+		// ERROR!!
+		exit(-1);
+	}
+
 	ball->mEnergy = energy;
-	if (energy == 1)
+	switch (energy)
 	{
+	case 1:
+	case 2:
 		ball->mRadius = 8.0f;
-		ball->mAnimatedSprite = CreateAnimationSprite(Game.mResources.mAtom1, 4, 8);
-	}
-	else if (energy == 2)
-	{
-		ball->mRadius = 11.0f;
-		ball->mAnimatedSprite = CreateAnimationSprite(Game.mResources.mAtom2, 4, 8);
-	}
-	else if (energy == 4)
-	{
-		ball->mRadius = 14.0f;
-		ball->mAnimatedSprite = CreateAnimationSprite(Game.mResources.mAtom4, 4, 8);
+		break;
+	case 3:
+	case 4:
+		ball->mRadius = 12.0f;
+		break;
+	case 5:
+	case 6:
+		ball->mRadius = 16.0f;
+		break;
+	default:
+		break;
 	}
 }
 
