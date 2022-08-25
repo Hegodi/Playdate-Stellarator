@@ -8,6 +8,8 @@
 #define SCREEN_WIDTH 400
 #define SCREEN_HEIGHT 240
 
+#define MAX_SCORES 5
+
 typedef enum {EMode_SplashScreen, EMode_Menu, EMode_InGame} EMode;
 typedef struct
 {
@@ -28,6 +30,8 @@ typedef struct
 		SBall* balls;
 	} mSplash;
 
+	int mScoreboard[3*MAX_SCORES];
+
 	struct
 	{
 		LCDBitmap* mMenuBackground;
@@ -38,11 +42,14 @@ typedef struct
 		LCDBitmap* mMarkerMenu;
 		LCDBitmap** mBalls;
 		LCDBitmap** mAtomSelectedFX;
+		LCDBitmap** mGrabberFX;
 		LCDBitmap** mExplosionFX;
 		LCDBitmap* mSocket;
+		LCDBitmap* mArrow;
 
 		LCDFont* mFont;
 	} mResources;
+
 } SGame;
 
 
@@ -52,5 +59,6 @@ extern SGame Game;
 int Update(void* ud);
 void InitGame(PlaydateAPI* pd);
 void CleanupGame();
+void AddScore(int score, int level);
 
 #endif 

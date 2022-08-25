@@ -8,11 +8,11 @@
 #define  GAMEPLAY_YMIN 7
 #define  GAMEPLAY_YMAX SCREEN_HEIGHT - 7
 
-#define AIM_ANGLE_MAX 60.0f
+#define AIM_ANGLE_MAX 45.0f
 #define SOCKET_POS_X 25
 #define SOCKET_SIZE 40
 #define HOOK_SPEED 20.0f
-#define HOOK_RADIUS 20
+#define HOOK_RADIUS 16
 #define SHOOT_SPEED 10.0f
 #define ELASTIC_COEFFICIENT_WALL 0.9f
 #define SPAWN_POINT_X 375
@@ -35,7 +35,7 @@ void StageInit(SStage* stage, SStageConfig* config)
 	}
 
 	stage->mIsPaused = false;
-	stage->mLevel = config->mName;
+	stage->mLevel = config->mLevel;
 	stage->mCountdown = 3;
 	stage->mTicks = 0;
 	stage->mTickNextSpawn = 30;
@@ -70,6 +70,8 @@ void StageInit(SStage* stage, SStageConfig* config)
 	stage->mLastExplosionInd = 0;
 
 	stage->mNextId = 1;
+
+	stage->mGrabberSprite = CreateAnimationSprite(Game.mResources.mGrabberFX, 3, 1);
 	StageUpdateAimDirection(stage);
 }
 
@@ -100,7 +102,7 @@ void StageDraw(SStage* stage)
 	if (stage->mIsGrabbing)
 	{
 		Game.mPd->graphics->drawLine(stage->mAnchorPos.x, stage->mAnchorPos.y, stage->mHookPos.x, stage->mHookPos.y, 2, 0);
-		Game.mPd->graphics->drawEllipse(stage->mHookPos.x- HOOK_RADIUS/2, stage->mHookPos.y- HOOK_RADIUS/2, HOOK_RADIUS, HOOK_RADIUS, 1, 0, 360, 0);
+		DrawAnimatedSprite(Game.mPd, &stage->mGrabberSprite, stage->mHookPos.x - 16, stage->mHookPos.y - 16);
 	}
 
 	for (int i = 0; i < stage->mMaxSlots; i++, y+=SOCKET_SIZE)
@@ -109,6 +111,7 @@ void StageDraw(SStage* stage)
 		if (stage->mSlotSelected == i)
 		{
 			Game.mPd->graphics->drawLine(stage->mAnchorPos.x, stage->mAnchorPos.y, stage->mAnchorPos.x + 64*stage->mAimDirection.x, stage->mAnchorPos.y + 64*stage->mAimDirection.y, 1, kColorBlack);
+			Game.mPd->graphics->drawRotatedBitmap(Game.mResources.mArrow, stage->mAnchorPos.x, stage->mAnchorPos.y, stage->mGunAngle, 0.0f, 0.5f, 1.0f, 1.0f);
 		}
 		Game.mPd->graphics->drawBitmap(Game.mResources.mSocket, SOCKET_POS_X-16, y, kBitmapUnflipped);
 	}
@@ -140,11 +143,16 @@ void StageDraw(SStage* stage)
 
 	static char buffer[128];
 	//sprintf(buffer, "%s\n%02d:%02d\n%03d", stage->mLevel, minutes, seconds, stage->mScore);
-	sprintf(buffer, "%s\n%02d:%02d\n%03d", stage->mLevel, minutes, seconds, stage->mScore);
-	Game.mPd->graphics->drawText(buffer, strlen(buffer), kASCIIEncoding, 6, 12);
+	sprintf(buffer, "%04d", stage->mScore);
+	DrawText(Game.mPd, buffer, 27, 7, Game.mResources.mFont, true);
+	if (stage->mCountdown < 0)
+	{
+		sprintf(buffer, "%02d:%02d", minutes, seconds);
+		DrawText(Game.mPd, buffer, 27, 20, Game.mResources.mFont, true);
+	}
 
-	sprintf(buffer, "%02d", stage->mNumberBalls);
-	Game.mPd->graphics->drawText(buffer, strlen(buffer), kASCIIEncoding, 6, SCREEN_HEIGHT-40);
+	sprintf(buffer, "%02d/%02d", stage->mNumberBalls, stage->mMaxNumberBalls);
+	DrawText(Game.mPd, buffer, 27, SCREEN_HEIGHT - 20, Game.mResources.mFont, true);
 
 	if (stage->mIsGameOver)
 	{
@@ -196,6 +204,11 @@ void StageUpdatePhysics(SStage* stage)
 				SBall* ball = stage->mBalls;
 				for (int i = 0; i < stage->mNumberBalls; i++, ball++)
 				{
+					if (!ball->mUpdatePhysics)
+					{
+						continue;
+					}
+
 					float dx = ball->mPos.x - stage->mHookPos.x;
 					float dy = ball->mPos.y - stage->mHookPos.y;
 					float minDst = ball->mRadius + HOOK_RADIUS;
@@ -203,6 +216,7 @@ void StageUpdatePhysics(SStage* stage)
 					{
 						stage->mBallsInSlots[stage->mSlotSelected] = ball;
 						ball->mUpdatePhysics = false;
+						ball->mCanMerge = false;
 						stage->mIsGrabbing = 2;
 						break;
 					}
@@ -245,6 +259,7 @@ void StageUpdatePhysics(SStage* stage)
 		if (stage->mNumberBalls == stage->mMaxNumberBalls)
 		{
 			stage->mIsGameOver = true;
+			AddScore(stage->mScore, stage->mLevel);
 		}
 		else
 		{
@@ -324,6 +339,8 @@ void StageUpdatePhysics(SStage* stage)
 							StageDeleteBall(stage, b1->mId);
 							b2->mVel.x += vel.x;
 							b2->mVel.y += vel.y;
+							b2->mVel.x *= 0.5f;
+							b2->mVel.y *= 0.5f;
 						}
 						else if (b2->mCanMerge)
 						{
@@ -332,6 +349,8 @@ void StageUpdatePhysics(SStage* stage)
 							StageDeleteBall(stage, b2->mId);
 							b1->mVel.x += vel.x;
 							b1->mVel.y += vel.y;
+							b1->mVel.x *= 0.5f;
+							b1->mVel.y *= 0.5f;
 						}
 					}
 					hasMerged = true;
@@ -434,6 +453,14 @@ void StageUpdate(SStage* stage)
 			DrawText(Game.mPd, "Game Over", x, 100, Game.mResources.mFont, true);
 			sprintf(buffer, "Score: %d", stage->mScore);
 			DrawText(Game.mPd, buffer, x, 120, Game.mResources.mFont, true);
+			PDButtons current;
+			PDButtons pushed;
+			Game.mPd->system->getButtonState(&current, &pushed, NULL);
+
+			if (pushed & kButtonA || pushed & kButtonB)
+			{
+				Game.mMode = EMode_Menu;
+			}
 		}
 		else
 		{
@@ -559,7 +586,7 @@ void StageAddBall(SStage* stage, float x , float y, float vx, float vy, int ener
 	ballNew->mVel.y = vy;
 	ballNew->mUpdatePhysics = true;
 	ballNew->mCanMerge = false;
-	ballNew->mFXCanMerge = CreateAnimationSprite(Game.mResources.mAtomSelectedFX, 2, 2);
+	ballNew->mFXCanMerge = CreateAnimationSprite(Game.mResources.mAtomSelectedFX, 3, 2);
 	StageSetupAtom(ballNew, energy);
 	
 }

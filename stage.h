@@ -9,7 +9,7 @@
 
 typedef struct  
 {
-	const char* mName;
+	int mLevel;
 	int mMaxSlots;
 	int mMaxBalls;
 	int mSpawnMinPeriod;
@@ -19,7 +19,7 @@ typedef struct
 
 typedef struct 
 {
-	const char* mLevel;
+	int mLevel;
 	int mCountdown;
 	bool mIsPaused;
 	bool mIsGameOver;
@@ -40,7 +40,7 @@ typedef struct
 	Vec2f mAnchorPos;
 	float mGunAngle;
 	int  mIsGrabbing;
-	SAnimatedSprite mAtomSelectedFX;
+	SAnimatedSprite mGrabberSprite;
 	bool mMaxBallsReached;
 	unsigned int mNextId;
 

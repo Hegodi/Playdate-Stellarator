@@ -6,21 +6,64 @@
 #include "utils.h"
 #include "stage.h"
 
+
+#define FILE_SCOREBOARD "scoreboard"
+
 SGame Game;
 SStage Stage;
 
 static SStageConfig StageConfigs[] = { 
-	{ "Easy", 4, 10, 60, 300 } ,
-	{ "Normal", 3, 10, 60, 240 } ,
-	{ "Hard", 1, 10, 60, 180 } 
+	{ 0, 4, 10, 60, 300 } ,
+	{ 1, 3, 10, 60, 240 } ,
+	{ 2, 1, 10, 60, 180 } 
 };
 
 static const char* MenuStrings[] = {
+	"Tutorial",
 	"Easy",
 	"Normal",
 	"Hard",
 	"Scoreboard"
 };
+
+void LoadScoreboard()
+{
+	SDFile* file = Game.mPd->file->open(FILE_SCOREBOARD, kFileReadData);
+	if (file != NULL)
+	{
+		Game.mPd->file->read(file, &Game.mScoreboard, sizeof(Game.mScoreboard));
+		Game.mPd->file->close(file);
+	}
+	else
+	{
+		memset(&Game.mScoreboard, sizeof(Game.mScoreboard), 0);
+	}
+}
+
+void SaveScoreboard()
+{
+	SDFile* file = Game.mPd->file->open(FILE_SCOREBOARD, kFileWrite);
+	if (file != NULL)
+	{
+		Game.mPd->file->write(file, &Game.mScoreboard, sizeof(Game.mScoreboard));
+	}
+	Game.mPd->file->close(file);
+
+}
+
+void AddScore(int score, int level)
+{
+	int ind = level * MAX_SCORES;
+	for (int i=0; i<MAX_SCORES; i++, ind++)
+	{
+		if (score > Game.mScoreboard[ind])
+		{
+			Game.mScoreboard[ind] = score;
+			break;
+		}
+	}
+	SaveScoreboard();
+}
 
 void UpdateMenu()
 {
@@ -30,7 +73,7 @@ void UpdateMenu()
 	int x = SCREEN_WIDTH / 2;
 	Game.mPd->graphics->fillRect(SCREEN_WIDTH / 2-60, 90, 120, 120, kColorWhite);
 	Game.mPd->graphics->drawRect(SCREEN_WIDTH / 2-60, 90, 120, 120, kColorBlack);
-	for (int i=0; i<4; i++)
+	for (int i=0; i<5; i++)
 	{
 		int y = 100 + i * 20;
 		DrawText(Game.mPd, MenuStrings[i], x, y , Game.mResources.mFont, true);
@@ -51,13 +94,13 @@ void UpdateMenu()
 	}
 	else if (pushed & kButtonDown)
 	{
-		if (Game.mMenu.mIndexSel < 3) Game.mMenu.mIndexSel++;
+		if (Game.mMenu.mIndexSel < 4) Game.mMenu.mIndexSel++;
 	}
 	else if (pushed & kButtonA)
 	{
-		if (Game.mMenu.mIndexSel < 3)
+		if (Game.mMenu.mIndexSel > 0 && Game.mMenu.mIndexSel < 4)
 		{
-			StageInit(&Stage, &StageConfigs[Game.mMenu.mIndexSel]);
+			StageInit(&Stage, &StageConfigs[Game.mMenu.mIndexSel-1]);
 			Game.mMode = EMode_InGame;
 		}
 	}
@@ -110,7 +153,12 @@ void UpdateSplashScreen()
 		}
 	}
 }
-//
+
+void UpdateScoreboard()
+{
+
+}
+
 void LoadBitmaps()
 {
 	Game.mResources.mStageBackground = loadImageAtPath(Game.mPd, "images/StageBG");
@@ -123,9 +171,15 @@ void LoadBitmaps()
 	Game.mResources.mBalls[4] = loadImageAtPath(Game.mPd, "images/Ball32");
 	Game.mResources.mBalls[5] = loadImageAtPath(Game.mPd, "images/Ball64");
 
-	Game.mResources.mAtomSelectedFX = (LCDBitmap**)malloc(2 * sizeof(LCDBitmap*));
+	Game.mResources.mAtomSelectedFX = (LCDBitmap**)malloc(3 * sizeof(LCDBitmap*));
 	Game.mResources.mAtomSelectedFX[0] = loadImageAtPath(Game.mPd, "images/AtomHLa");
 	Game.mResources.mAtomSelectedFX[1] = loadImageAtPath(Game.mPd, "images/AtomHLb");
+	Game.mResources.mAtomSelectedFX[2] = loadImageAtPath(Game.mPd, "images/AtomHLc");
+
+	Game.mResources.mGrabberFX = (LCDBitmap**)malloc(3 * sizeof(LCDBitmap*));
+	Game.mResources.mGrabberFX[0] = loadImageAtPath(Game.mPd, "images/Ball_Selected0");
+	Game.mResources.mGrabberFX[1] = loadImageAtPath(Game.mPd, "images/Ball_Selected1");
+	Game.mResources.mGrabberFX[2] = loadImageAtPath(Game.mPd, "images/Ball_Selected2");
 
 	Game.mResources.mExplosionFX = (LCDBitmap**)malloc(5 * sizeof(LCDBitmap*));
 	Game.mResources.mExplosionFX[0] = loadImageAtPath(Game.mPd, "images/Explosion1");
@@ -147,6 +201,8 @@ void LoadBitmaps()
 	Game.mResources.mStageDamage[2] = loadImageAtPath(Game.mPd, "images/StageOveraly_Damage1");
 	Game.mResources.mStageDamage[3] = loadImageAtPath(Game.mPd, "images/StageOveraly_Damage0");
 
+	Game.mResources.mArrow = loadImageAtPath(Game.mPd, "images/Arrow");
+
 	const char *outErr;
 	Game.mResources.mFont = Game.mPd->graphics->loadFont("fonts/font-full-circle", &outErr);
 
@@ -164,7 +220,7 @@ void InitGame(PlaydateAPI* pd)
 	Game.mSplash.mTicks = 0;
 
 	Game.mMenu.mIndexSel = 0;
-
+	LoadScoreboard();
 }
 
 void CleanupGame()
@@ -174,13 +230,15 @@ void CleanupGame()
 	Game.mPd->graphics->freeBitmap(Game.mResources.mMenuBackground);
 	Game.mPd->graphics->freeBitmap(Game.mResources.mSplashBackground);
 	Game.mPd->graphics->freeBitmap(Game.mResources.mSplashTitle);
+	Game.mPd->graphics->freeBitmap(Game.mResources.mArrow);
 
 	for (int i=0; i<6; i++)
 	{
 		Game.mPd->graphics->freeBitmap(Game.mResources.mBalls[i]);
 	}
-	for (int i = 0; i < 2; i++)
+	for (int i = 0; i < 3; i++)
 	{
+		Game.mPd->graphics->freeBitmap(Game.mResources.mGrabberFX[i]);
 		Game.mPd->graphics->freeBitmap(Game.mResources.mAtomSelectedFX[i]);
 	}
 	for (int i = 0; i < 4; i++)
@@ -188,6 +246,7 @@ void CleanupGame()
 		Game.mPd->graphics->freeBitmap(Game.mResources.mStageDamage[i]);
 	}
 
+	free(Game.mResources.mGrabberFX);
 	free(Game.mResources.mStageDamage);
 	free(Game.mResources.mAtomSelectedFX);
 	free(Game.mResources.mBalls);
