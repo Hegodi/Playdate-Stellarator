@@ -10,7 +10,7 @@
 
 #define MAX_SCORES 5
 
-typedef enum {EMode_SplashScreen, EMode_Menu, EMode_InGame} EMode;
+typedef enum {EMode_SplashScreen, EMode_Menu, EMode_InGame, EMode_Scoreboard} EMode;
 typedef struct
 {
 	PlaydateAPI* mPd;

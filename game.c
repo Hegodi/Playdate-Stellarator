@@ -103,6 +103,10 @@ void UpdateMenu()
 			StageInit(&Stage, &StageConfigs[Game.mMenu.mIndexSel-1]);
 			Game.mMode = EMode_InGame;
 		}
+		else if (Game.mMenu.mIndexSel == 4)
+		{
+			Game.mMode = EMode_Scoreboard;
+		}
 	}
 }
 
@@ -156,6 +160,32 @@ void UpdateSplashScreen()
 
 void UpdateScoreboard()
 {
+	Game.mPd->graphics->clear(1);
+	Game.mPd->graphics->drawBitmap(Game.mResources.mMenuBackground, 0, 0, kBitmapUnflipped);
+	Game.mPd->graphics->setFont(Game.mResources.mFont);
+	int x = SCREEN_WIDTH / 2;
+	Game.mPd->graphics->fillRect(SCREEN_WIDTH / 2-120, 90, 240, 120, kColorWhite);
+	Game.mPd->graphics->drawRect(SCREEN_WIDTH / 2-120, 90, 240, 120, kColorBlack);
+	for (int i=0; i<3; i++)
+	{
+		int x = 130 + i * 70;
+		DrawText(Game.mPd, MenuStrings[i+1], x, 100 , Game.mResources.mFont, true);
+		for (int j=0; j<MAX_SCORES; j++)
+		{
+			int y = 120 + j * 15;
+			char buffer[64];
+			snprintf(buffer, 64, "%04d", Game.mScoreboard[i * MAX_SCORES + j]);
+			DrawText(Game.mPd, buffer, x, y, Game.mResources.mFont, true);
+		}
+	}
+
+	PDButtons current;
+	PDButtons pushed;
+	Game.mPd->system->getButtonState(&current, &pushed, NULL);
+	if (pushed & kButtonA || pushed & kButtonB)
+	{
+		Game.mMode = EMode_Menu;
+	}
 
 }
 
@@ -261,6 +291,9 @@ int Update(void* ud)
 		break;
 	case EMode_Menu:
 		UpdateMenu();
+		break;
+	case EMode_Scoreboard:
+		UpdateScoreboard();
 		break;
 	case EMode_InGame:
 		StageUpdate(&Stage);

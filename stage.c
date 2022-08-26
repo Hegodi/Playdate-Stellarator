@@ -143,15 +143,15 @@ void StageDraw(SStage* stage)
 
 	static char buffer[128];
 	//sprintf(buffer, "%s\n%02d:%02d\n%03d", stage->mLevel, minutes, seconds, stage->mScore);
-	sprintf(buffer, "%04d", stage->mScore);
+	snprintf(buffer, 128, "%04d", stage->mScore);
 	DrawText(Game.mPd, buffer, 27, 7, Game.mResources.mFont, true);
 	if (stage->mCountdown < 0)
 	{
-		sprintf(buffer, "%02d:%02d", minutes, seconds);
+		snprintf(buffer, 128, "%02d:%02d", minutes, seconds);
 		DrawText(Game.mPd, buffer, 27, 20, Game.mResources.mFont, true);
 	}
 
-	sprintf(buffer, "%02d/%02d", stage->mNumberBalls, stage->mMaxNumberBalls);
+	snprintf(buffer, 128, "%02d/%02d", stage->mNumberBalls, stage->mMaxNumberBalls);
 	DrawText(Game.mPd, buffer, 27, SCREEN_HEIGHT - 20, Game.mResources.mFont, true);
 
 	if (stage->mIsGameOver)
@@ -422,7 +422,6 @@ void StageUpdate(SStage* stage)
 		int x = (SCREEN_WIDTH - GAMEPLAY_XMIN) / 2 + GAMEPLAY_XMIN;
 		Game.mPd->graphics->fillRect(x - 100, 60, 200, 100, kColorWhite);
 		Game.mPd->graphics->drawRect(x - 100, 60, 200, 100, kColorBlack);
-		static char buffer[128];
 		DrawText(Game.mPd, "PAUSE", x, 100, Game.mResources.mFont, true);
 		DrawText(Game.mPd, "Press A to exit", x, 130, Game.mResources.mFont, true);
 		DrawText(Game.mPd, "Press B to resume", x, 150, Game.mResources.mFont, true);
@@ -451,7 +450,7 @@ void StageUpdate(SStage* stage)
 			Game.mPd->graphics->drawRect(x - 60, 90, 120, 60, kColorBlack);
 			static char buffer[128];
 			DrawText(Game.mPd, "Game Over", x, 100, Game.mResources.mFont, true);
-			sprintf(buffer, "Score: %d", stage->mScore);
+			snprintf(buffer, 128, "Score: %d", stage->mScore);
 			DrawText(Game.mPd, buffer, x, 120, Game.mResources.mFont, true);
 			PDButtons current;
 			PDButtons pushed;
@@ -481,7 +480,7 @@ void StageUpdate(SStage* stage)
 		{
 			static char buffer[128];
 			DrawText(Game.mPd, "Ready", x, 95, Game.mResources.mFont, true);
-			sprintf(buffer, "%d", stage->mCountdown);
+			snprintf(buffer, 128, "%d", stage->mCountdown);
 			DrawText(Game.mPd, buffer, x, 110, Game.mResources.mFont, true);
 		}
 		else
@@ -596,7 +595,7 @@ void StageSetupAtom(SBall* ball, int energy)
 	if (energy < 1 || energy > 6)
 	{
 		// ERROR!!
-		exit(-1);
+		Game.mPd->system->error("ERROR: ball with wrong enenrgy");
 	}
 
 	ball->mEnergy = energy;

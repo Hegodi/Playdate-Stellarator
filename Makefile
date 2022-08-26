@@ -16,9 +16,10 @@ endif
 
 # List C source files here
 SRC = 	\
-        main.c \
-        game.c \
-		utils.c \
+       main.c \
+       game.c \
+       utils.c \
+       ball.c \
 
 # List all user directories here
 UINCDIR = 
