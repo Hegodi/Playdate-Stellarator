@@ -422,9 +422,9 @@ void StageUpdate(SStage* stage)
 		int x = (SCREEN_WIDTH - GAMEPLAY_XMIN) / 2 + GAMEPLAY_XMIN;
 		Game.mPd->graphics->fillRect(x - 100, 60, 200, 100, kColorWhite);
 		Game.mPd->graphics->drawRect(x - 100, 60, 200, 100, kColorBlack);
-		//DrawText(Game.mPd, "PAUSE", x, 100, Game.mResources.mFont, true);
-		//DrawText(Game.mPd, "Press A to exit", x, 130, Game.mResources.mFont, true);
-		//DrawText(Game.mPd, "Press B to resume", x, 150, Game.mResources.mFont, true);
+		DrawText(Game.mPd, "PAUSE", x, 80, Game.mResources.mFont, true);
+		DrawText(Game.mPd, "Press A to exit", x, 110, Game.mResources.mFont, true);
+		DrawText(Game.mPd, "Press B to resume", x, 130, Game.mResources.mFont, true);
 		PDButtons current;
 		PDButtons pushed;
 		Game.mPd->system->getButtonState(&current, &pushed, NULL);

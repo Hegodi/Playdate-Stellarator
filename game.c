@@ -240,6 +240,7 @@ void LoadBitmaps()
 void InitGame(PlaydateAPI* pd) 
 {
 	Game.mPd = pd;
+	srand(pd->system->getSecondsSinceEpoch(NULL));
 	LoadBitmaps();
 	Game.mMode = EMode_SplashScreen;
 
@@ -301,7 +302,7 @@ int Update(void* ud)
 	default:
 		break;
 	}
-	//Game.mPd->system->drawFPS(0, 0);
+	Game.mPd->sprite->updateAndDrawSprites();
 }
 
 

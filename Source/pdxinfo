@@ -1,5 +1,7 @@
 name=Merge
 author=Hegodi Games
-description=Merge all balls!!
+description=Merge all the balls!!
 bundleID=com.hegodigames.merge
-imagePath=
+version=1.0.0
+buildNumber=1
+imagePath=card.png
