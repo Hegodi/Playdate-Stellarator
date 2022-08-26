@@ -67,7 +67,6 @@ void AddScore(int score, int level)
 
 void UpdateMenu()
 {
-	Game.mPd->graphics->clear(1);
 	Game.mPd->graphics->drawBitmap(Game.mResources.mMenuBackground, 0, 0, kBitmapUnflipped);
 	Game.mPd->graphics->setFont(Game.mResources.mFont);
 	int x = SCREEN_WIDTH / 2;
@@ -114,7 +113,6 @@ void UpdateMenu()
 void UpdateSplashScreen()
 {
 	Game.mSplash.mTicks++;
-	Game.mPd->graphics->clear(1);
 	Game.mPd->graphics->drawBitmap(Game.mResources.mSplashBackground, 0, 0, kBitmapUnflipped);
 
 	if (Game.mSplash.mFlag == 0)
@@ -160,7 +158,6 @@ void UpdateSplashScreen()
 
 void UpdateScoreboard()
 {
-	Game.mPd->graphics->clear(1);
 	Game.mPd->graphics->drawBitmap(Game.mResources.mMenuBackground, 0, 0, kBitmapUnflipped);
 	Game.mPd->graphics->setFont(Game.mResources.mFont);
 	int x = SCREEN_WIDTH / 2;
@@ -236,6 +233,8 @@ void LoadBitmaps()
 	const char *outErr;
 	Game.mResources.mFont = Game.mPd->graphics->loadFont("fonts/font-full-circle", &outErr);
 
+	Game.mPd->graphics->setFont(Game.mResources.mFont);
+
 }
 
 void InitGame(PlaydateAPI* pd) 
@@ -284,6 +283,7 @@ void CleanupGame()
 
 int Update(void* ud)
 {
+	Game.mPd->graphics->clear(1);
 	switch (Game.mMode)
 	{
 	case EMode_SplashScreen:

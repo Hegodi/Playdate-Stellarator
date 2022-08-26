@@ -95,7 +95,7 @@ void DrawText(PlaydateAPI* pd, const char* str, float x, float y, LCDFont* font,
 	int strLength = strlen(str);
 	if (font != NULL)
 	{
-		pd->graphics->setFont(font);
+		//pd->graphics->setFont(font);
 		if (centered)
 		{
 			int txtWidth = pd->graphics->getTextWidth(font, str, strLength, kASCIIEncoding, 0);
@@ -107,3 +107,4 @@ void DrawText(PlaydateAPI* pd, const char* str, float x, float y, LCDFont* font,
 		pd->graphics->drawText(str, strLength, kASCIIEncoding, x, y);
 	}
 }
+

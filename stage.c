@@ -34,6 +34,7 @@ void StageInit(SStage* stage, SStageConfig* config)
 		return;
 	}
 
+	stage->mIsGameOver = false;
 	stage->mIsPaused = false;
 	stage->mLevel = config->mLevel;
 	stage->mCountdown = 3;
@@ -95,7 +96,6 @@ void StageDraw(SStage* stage)
 	{
 		return;
 	}
-	Game.mPd->graphics->clear(1);
 
 	Game.mPd->graphics->drawBitmap(Game.mResources.mStageBackground, 0, 0, kBitmapUnflipped);
 	int y = SCREEN_HEIGHT * 0.5f - stage->mMaxSlots * SOCKET_SIZE / 2;
@@ -422,9 +422,9 @@ void StageUpdate(SStage* stage)
 		int x = (SCREEN_WIDTH - GAMEPLAY_XMIN) / 2 + GAMEPLAY_XMIN;
 		Game.mPd->graphics->fillRect(x - 100, 60, 200, 100, kColorWhite);
 		Game.mPd->graphics->drawRect(x - 100, 60, 200, 100, kColorBlack);
-		DrawText(Game.mPd, "PAUSE", x, 100, Game.mResources.mFont, true);
-		DrawText(Game.mPd, "Press A to exit", x, 130, Game.mResources.mFont, true);
-		DrawText(Game.mPd, "Press B to resume", x, 150, Game.mResources.mFont, true);
+		//DrawText(Game.mPd, "PAUSE", x, 100, Game.mResources.mFont, true);
+		//DrawText(Game.mPd, "Press A to exit", x, 130, Game.mResources.mFont, true);
+		//DrawText(Game.mPd, "Press B to resume", x, 150, Game.mResources.mFont, true);
 		PDButtons current;
 		PDButtons pushed;
 		Game.mPd->system->getButtonState(&current, &pushed, NULL);
