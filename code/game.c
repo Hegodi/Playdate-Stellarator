@@ -13,9 +13,10 @@ SGame Game;
 SStage Stage;
 
 static SStageConfig StageConfigs[] = { 
-	{ 0, 4, 10, 60, 300 } ,
-	{ 1, 3, 10, 60, 240 } ,
-	{ 2, 1, 10, 60, 180 } 
+	{ 0, 3, 11, 60, 300 } ,
+	{ 1, 3, 11, 60, 300 } ,
+	{ 2, 2, 11, 60, 240 } ,
+	{ 3, 1, 11, 60, 180 } 
 };
 
 static const char* MenuStrings[] = {
@@ -112,12 +113,17 @@ void UpdateMenu()
 	{
 		if (Game.mMenu.mIndexSel > 0 && Game.mMenu.mIndexSel < 4)
 		{
-			StageInit(&Stage, &StageConfigs[Game.mMenu.mIndexSel-1]);
+			StageInit(&Stage, &StageConfigs[Game.mMenu.mIndexSel]);
 			Game.mMode = EMode_InGame;
 		}
 		else if (Game.mMenu.mIndexSel == 4)
 		{
 			Game.mMode = EMode_Scoreboard;
+		}
+		else if (Game.mMenu.mIndexSel == 0)
+		{
+			StageInit(&Stage, &StageConfigs[Game.mMenu.mIndexSel]);
+			Game.mMode = EMode_Tutorial;
 		}
 	}
 }
@@ -319,6 +325,9 @@ int Update(void* ud)
 		break;
 	case EMode_InGame:
 		StageUpdate(&Stage);
+		break;
+	case EMode_Tutorial:
+		StageUpdateTutorial(&Stage);
 		break;
 	default:
 		break;

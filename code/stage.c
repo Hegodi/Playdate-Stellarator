@@ -35,13 +35,14 @@ void StageInit(SStage* stage, SStageConfig* config)
 		return;
 	}
 
+	stage->mTutorialStage = 0;
+
 	stage->mIsGameOver = false;
 	stage->mIsPaused = false;
 	stage->mLevel = config->mLevel;
 	stage->mCountdown = 3;
 	stage->mTicks = 0;
 	stage->mTickNextSpawn = 30;
-	stage->mSlotSelected = 0;
 
 	stage->mScore = 0;
 
@@ -54,6 +55,7 @@ void StageInit(SStage* stage, SStageConfig* config)
 	stage->mHookPos = stage->mAnchorPos;
 
 	stage->mMaxSlots = config->mMaxSlots;
+	stage->mSlotSelected = stage->mMaxSlots / 2;
 	stage->mBallsInSlots = (SBall**)malloc(stage->mMaxSlots * sizeof(SBall*));
 	for (int i = 0; i < stage->mMaxSlots; i++)
 	{
@@ -91,6 +93,8 @@ void StageClear(SStage* stage)
 	stage->mMaxSlots = 0;
 	free(stage->mBalls);
 	free(stage->mBallsInSlots);
+	stage->mBalls = NULL;
+	stage->mBallsInSlots = NULL;
 }
 
 void StageDraw(SStage* stage)
@@ -181,6 +185,34 @@ void StageUpdateAimDirection(SStage* stage)
 	stage->mAnchorPos.y = SCREEN_HEIGHT * 0.5f - stage->mMaxSlots * SOCKET_SIZE / 2 + stage->mSlotSelected * SOCKET_SIZE + 16; 
 }
 
+void StageUpdateSpawningBalls(SStage* stage)
+{
+	// Add new balls
+	if (stage->mTickNextSpawn <= stage->mTicks)
+	{
+		if (stage->mNumberBalls == stage->mMaxNumberBalls-1)
+		{
+			stage->mIsGameOver = true;
+			AddScore(stage->mScore, stage->mLevel);
+		}
+		else
+		{
+			StageAddBall(stage, SPAWN_POINT_X, SPAWN_POINT_Y, -(1.0f + rand() / (RAND_MAX + 1.0f)), 5.0f, 1 + rand() % 2);
+
+			if (stage->mNumberBalls == stage->mMaxNumberBalls)
+			{
+				stage->mMaxBallsReached = true;
+				stage->mTickNextSpawn = stage->mTicks + 5 * 30; // 5 seconds
+			}
+			else
+			{
+				stage->mTickNextSpawn = stage->mTicks + stage->mSpawnMinPeriod + rand() % stage->mSpawnDeltaPeriod;
+			}
+		}
+	}
+
+}
+
 void StageUpdatePhysics(SStage* stage)
 {
 	if (stage->mIsGrabbing > 0)
@@ -259,30 +291,6 @@ void StageUpdatePhysics(SStage* stage)
 		{
 			stage->mBallsInSlots[stage->mSlotSelected]->mPos.x = stage->mHookPos.x;
 			stage->mBallsInSlots[stage->mSlotSelected]->mPos.y = stage->mHookPos.y;
-		}
-	}
-
-	// Add new balls
-	if (stage->mTickNextSpawn <= stage->mTicks)
-	{
-		if (stage->mNumberBalls == stage->mMaxNumberBalls-1)
-		{
-			stage->mIsGameOver = true;
-			AddScore(stage->mScore, stage->mLevel);
-		}
-		else
-		{
-			StageAddBall(stage, SPAWN_POINT_X, SPAWN_POINT_Y, -(1.0f + rand() / (RAND_MAX + 1.0f)), 5.0f, 1 + rand() % 2);
-
-			if (stage->mNumberBalls == stage->mMaxNumberBalls)
-			{
-				stage->mMaxBallsReached = true;
-				stage->mTickNextSpawn = stage->mTicks + 5 * 30; // 5 seconds
-			}
-			else
-			{
-				stage->mTickNextSpawn = stage->mTicks + stage->mSpawnMinPeriod + rand() % stage->mSpawnDeltaPeriod;
-			}
 		}
 	}
 
@@ -423,6 +431,90 @@ void StageUpdatePhysics(SStage* stage)
 	}
 }
 
+void StageUpdateTutorial(SStage* stage)
+{
+	const int x = SCREEN_WIDTH / 2;
+	const int y = 10;
+	PDButtons current;
+	PDButtons pushed;
+	Game.mPd->system->getButtonState(&current, &pushed, NULL);
+	if (pushed & kButtonA)
+	{
+		stage->mTutorialStage++;
+		if (stage->mTutorialStage == 1)
+		{
+			StageAddBall(stage, SPAWN_POINT_X, SPAWN_POINT_Y, -(1.0f + rand() / (RAND_MAX + 1.0f)), 5.0f, 2);
+		}
+		else if (stage->mTutorialStage == 3)
+		{
+			StageAddBall(stage, SPAWN_POINT_X, SPAWN_POINT_Y, -(1.0f + rand() / (RAND_MAX + 1.0f)), 5.0f, 2);
+		}
+
+		if (stage->mTutorialStage > 5)
+		{
+			Game.mMode = EMode_Menu;
+		}
+	}
+
+	switch(stage->mTutorialStage)
+	{
+	case 0:
+		Game.mPd->graphics->fillRect(x-100, y, 200, 55, kColorWhite);
+		Game.mPd->graphics->drawRect(x-100, y, 200, 55, kColorBlack);
+		DrawText(Game.mPd, "Use the CRANK to aim", x, y+5, Game.mResources.mFont, true);
+		DrawText(Game.mPd, "Pulse A to continue", x, y+35, Game.mResources.mFont, true);
+		break;
+	case 1:
+		Game.mPd->graphics->fillRect(x-100, y, 200, 55, kColorWhite);
+		Game.mPd->graphics->drawRect(x-100, y, 200, 55, kColorBlack);
+		DrawText(Game.mPd, "Press the RIGHT button to", x, y+5, Game.mResources.mFont, true);
+		DrawText(Game.mPd, "grab the atoms", x, y+17, Game.mResources.mFont, true);
+		DrawText(Game.mPd, "Pulse A to continue", x, y+35, Game.mResources.mFont, true);
+		break;
+	case 2:
+		Game.mPd->graphics->fillRect(x-100, y, 200, 70, kColorWhite);
+		Game.mPd->graphics->drawRect(x-100, y, 200, 70, kColorBlack);
+		DrawText(Game.mPd, "If you have a ball in the", x, y+5, Game.mResources.mFont, true);
+		DrawText(Game.mPd, "socket, you can launch it", x, y+17, Game.mResources.mFont, true);
+		DrawText(Game.mPd, "pressing RIGHT again", x, y+29, Game.mResources.mFont, true);
+		DrawText(Game.mPd, "Pulse A to continue", x, y+50, Game.mResources.mFont, true);
+		break;
+	case 3:
+		Game.mPd->graphics->fillRect(x-120, y, 240, 55, kColorWhite);
+		Game.mPd->graphics->drawRect(x-120, y, 240, 55, kColorBlack);
+		DrawText(Game.mPd, "You can change the current", x, y+5, Game.mResources.mFont, true);
+		DrawText(Game.mPd, "socket with UP/DOWN buttons", x, y+17, Game.mResources.mFont, true);
+		DrawText(Game.mPd, "Pulse A to continue", x, y+35, Game.mResources.mFont, true);
+		break;
+	case 4:
+		Game.mPd->graphics->fillRect(x-120, y, 240, 100, kColorWhite);
+		Game.mPd->graphics->drawRect(x-120, y, 240, 100, kColorBlack);
+		DrawText(Game.mPd, "If the ball you launched hit", x, y+5, Game.mResources.mFont, true);
+		DrawText(Game.mPd, "another ball of the same value", x, y+17, Game.mResources.mFont, true);
+		DrawText(Game.mPd, "(before hitting anything else)", x, y+29, Game.mResources.mFont, true);
+		DrawText(Game.mPd, "they will fusion and you will", x, y+41, Game.mResources.mFont, true);
+		DrawText(Game.mPd, "get points", x, y+53, Game.mResources.mFont, true);
+		DrawText(Game.mPd, "Pulse A to continue", x, y+80, Game.mResources.mFont, true);
+		break;
+	case 5:
+		Game.mPd->graphics->fillRect(x-120, y, 240, 70, kColorWhite);
+		Game.mPd->graphics->drawRect(x-120, y, 240, 70, kColorBlack);
+		DrawText(Game.mPd, "Be careful, if you end up with", x, y+5, Game.mResources.mFont, true);
+		DrawText(Game.mPd, "many balls in the reactor,", x, y+17, Game.mResources.mFont, true);
+		DrawText(Game.mPd, "it will overheat.", x, y+29, Game.mResources.mFont, true);
+		DrawText(Game.mPd, "Pulse A to return to main menu", x, y+50, Game.mResources.mFont, true);
+		break;
+	default:
+		Game.mPd->graphics->fillRect(x-80, y, 160, 50, kColorWhite);
+		Game.mPd->graphics->drawRect(x-80, y, 160, 50, kColorBlack);
+	}
+
+	stage->mTicks++;
+	StageUpdateInput(stage);
+	StageUpdatePhysics(stage);
+	StageDraw(stage);
+}
+
 void StageUpdate(SStage* stage)
 {
 	if (stage->mIsPaused)
@@ -474,6 +566,7 @@ void StageUpdate(SStage* stage)
 		{
 			stage->mTicks++;
 			StageUpdateInput(stage);
+			StageUpdateSpawningBalls(stage);
 			StageUpdatePhysics(stage);
 			StageDraw(stage);
 		}
@@ -570,7 +663,7 @@ void StageUpdateInput(SStage* stage)
 			StageUpdateAimDirection(stage);
 		}
 	}
-	else if (pushed & kButtonB)
+	else if (pushed & kButtonB && stage->mTutorialStage == 0)
 	{
 		stage->mIsPaused = true;
 	}

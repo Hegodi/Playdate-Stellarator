@@ -50,10 +50,14 @@ typedef struct
 	Vec2f mPosExplosions[MAX_EXPLOSIONS_FX];
 	bool mExplosionsActive[MAX_EXPLOSIONS_FX];
 	int mLastExplosionInd;
+
+
+	int mTutorialStage;
 		
 } SStage;
 
 void StageInit(SStage* stage, SStageConfig* config);
 void StageClear(SStage* stage);
+void StageUpdateTutorial(SStage* stage);
 void StageUpdate(SStage* stage);
 #endif
