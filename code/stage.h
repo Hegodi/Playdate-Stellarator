@@ -28,6 +28,8 @@ typedef struct
 	int mMaxNumberBalls;
 	int mScore;
 	SBall** mBallsInSlots;
+	SBall* mBallGrabbed;
+
 	int mMaxSlots;
 	int mSlotSelected;
 	int mSpawnMinPeriod;

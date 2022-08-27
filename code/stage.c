@@ -15,6 +15,7 @@
 #define HOOK_RADIUS 16
 #define SHOOT_SPEED 10.0f
 #define ELASTIC_COEFFICIENT_WALL 0.9f
+#define ELASTIC_COEFFICIENT_BALLS 0.8f
 #define SPAWN_POINT_X 375
 #define SPAWN_POINT_Y 32
 
@@ -46,7 +47,7 @@ void StageInit(SStage* stage, SStageConfig* config)
 
 	stage->mMaxNumberBalls = config->mMaxBalls;
 	stage->mNumberBalls = 0;
-	stage->mBalls = malloc(stage->mMaxNumberBalls * sizeof(SBall));
+	stage->mBalls = (SBall*)malloc(stage->mMaxNumberBalls * sizeof(SBall));
 
 	stage->mGunAngle = 0.01f;
 	stage->mIsGrabbing = false;
@@ -58,6 +59,7 @@ void StageInit(SStage* stage, SStageConfig* config)
 	{
 		stage->mBallsInSlots[i] = NULL;
 	}
+	stage->mBallGrabbed = NULL;
 
 	stage->mSpawnMinPeriod = config->mSpawnMinPeriod;
 	stage->mSpawnDeltaPeriod = config->mSpawnMaxPeriod - config->mSpawnMinPeriod;
@@ -152,7 +154,7 @@ void StageDraw(SStage* stage)
 		DrawText(Game.mPd, buffer, 27, 20, Game.mResources.mFont, true);
 	}
 
-	snprintf(buffer, 128, "%02d/%02d", stage->mNumberBalls, stage->mMaxNumberBalls);
+	snprintf(buffer, 128, "%02d/%02d", stage->mNumberBalls, (stage->mMaxNumberBalls-1));
 	DrawText(Game.mPd, buffer, 27, SCREEN_HEIGHT - 20, Game.mResources.mFont, true);
 
 	if (stage->mIsGameOver)
@@ -162,9 +164,9 @@ void StageDraw(SStage* stage)
 	else
 	{
 		int ballsLeft = stage->mMaxNumberBalls - stage->mNumberBalls;
-		if (ballsLeft < 3)
+		if (ballsLeft < 4)
 		{
-			Game.mPd->graphics->drawBitmap(Game.mResources.mStageDamage[ballsLeft + 1], 0, 0, kBitmapUnflipped);
+			Game.mPd->graphics->drawBitmap(Game.mResources.mStageDamage[ballsLeft], 0, 0, kBitmapUnflipped);
 		}
 	}
 }
@@ -194,36 +196,11 @@ void StageUpdatePhysics(SStage* stage)
 			{
 				stage->mIsGrabbing = 2;
 			}
-
 			if (stage->mHookPos.x > GAMEPLAY_XMAX ||
-			    stage->mHookPos.y < GAMEPLAY_YMIN || stage->mHookPos.y > GAMEPLAY_YMAX)
+				stage->mHookPos.y < GAMEPLAY_YMIN || stage->mHookPos.y > GAMEPLAY_YMAX)
 			{
 				stage->mIsGrabbing = 2;
 			}
-			else
-			{
-				SBall* ball = stage->mBalls;
-				for (int i = 0; i < stage->mNumberBalls; i++, ball++)
-				{
-					if (!ball->mUpdatePhysics)
-					{
-						continue;
-					}
-
-					float dx = ball->mPos.x - stage->mHookPos.x;
-					float dy = ball->mPos.y - stage->mHookPos.y;
-					float minDst = ball->mRadius + HOOK_RADIUS;
-					if ((dx * dx + dy * dy) < minDst * minDst)
-					{
-						stage->mBallsInSlots[stage->mSlotSelected] = ball;
-						ball->mUpdatePhysics = false;
-						ball->mCanMerge = false;
-						stage->mIsGrabbing = 2;
-						break;
-					}
-				}
-			}
-
 		}
 		else if (stage->mIsGrabbing == 2)
 		{
@@ -240,9 +217,40 @@ void StageUpdatePhysics(SStage* stage)
 
 			if (ModuleSqr(&dst) < 100)
 			{
+				stage->mBallsInSlots[stage->mSlotSelected] = stage->mBallGrabbed;
+				stage->mBallGrabbed = NULL;
 				stage->mIsGrabbing = 0;
 			}
 		}
+
+		if (stage->mBallGrabbed == NULL)
+		{
+			SBall* ball = stage->mBalls;
+			for (int i = 0; i < stage->mNumberBalls; i++, ball++)
+			{
+				if (!ball->mUpdatePhysics)
+				{
+					continue;
+				}
+
+				float dx = ball->mPos.x - stage->mHookPos.x;
+				float dy = ball->mPos.y - stage->mHookPos.y;
+				float minDst = ball->mRadius + HOOK_RADIUS;
+				if ((dx * dx + dy * dy) < minDst * minDst)
+				{
+					stage->mBallGrabbed = ball;
+					ball->mUpdatePhysics = false;
+					ball->mCanMerge = false;
+					stage->mIsGrabbing = 2;
+					break;
+				}
+			}
+		}
+		else
+		{
+			stage->mBallGrabbed->mPos = stage->mHookPos;
+		}
+
 	}
 	else
 	{
@@ -257,7 +265,7 @@ void StageUpdatePhysics(SStage* stage)
 	// Add new balls
 	if (stage->mTickNextSpawn <= stage->mTicks)
 	{
-		if (stage->mNumberBalls == stage->mMaxNumberBalls)
+		if (stage->mNumberBalls == stage->mMaxNumberBalls-1)
 		{
 			stage->mIsGameOver = true;
 			AddScore(stage->mScore, stage->mLevel);
@@ -374,11 +382,11 @@ void StageUpdatePhysics(SStage* stage)
 					// Extra safe to avoid duplicated collisions
 					if (v2n - v1n < 0)
 					{
-						b1->mVel.x = t.x * v1t + n.x * v2n;
-						b1->mVel.y = t.y * v1t + n.y * v2n;
+						b1->mVel.x = (t.x * v1t + n.x * v2n) * ELASTIC_COEFFICIENT_BALLS;
+						b1->mVel.y = (t.y * v1t + n.y * v2n) * ELASTIC_COEFFICIENT_BALLS;
 
-						b2->mVel.x = t.x * v2t + n.x * v1n;
-						b2->mVel.y = t.y * v2t + n.y * v1n;
+						b2->mVel.x = (t.x * v2t + n.x * v1n) * ELASTIC_COEFFICIENT_BALLS;
+						b2->mVel.y = (t.y * v2t + n.y * v1n) * ELASTIC_COEFFICIENT_BALLS;
 					}
 				}
 			}
@@ -518,13 +526,15 @@ void StageUpdateInput(SStage* stage)
 
 	if (pushed & kButtonRight)
 	{
-		if (stage->mIsGrabbing)
+		if (stage->mIsGrabbing != 0)
 		{
 			stage->mIsGrabbing = 0;
-			if (stage->mBallsInSlots[stage->mSlotSelected] != NULL)
+			if (stage->mBallGrabbed != NULL)
 			{
-				stage->mBallsInSlots[stage->mSlotSelected]->mUpdatePhysics = true;
-				stage->mBallsInSlots[stage->mSlotSelected] = NULL;
+				stage->mBallGrabbed->mUpdatePhysics = true;
+				stage->mBallGrabbed->mVel.x *= 0.1f;
+				stage->mBallGrabbed->mVel.y *= 0.1f;
+				stage->mBallGrabbed = NULL;
 			}
 		}
 		else
@@ -569,6 +579,12 @@ void StageUpdateInput(SStage* stage)
 void StageAddBall(SStage* stage, float x , float y, float vx, float vy, int energy)
 {
 	stage->mNumberBalls++;
+	if (stage->mNumberBalls >= stage->mMaxNumberBalls)
+	{
+		stage->mNumberBalls = stage->mMaxNumberBalls - 1;
+		Game.mPd->system->error("ERROR: too many balls");
+		return;
+	}
 	/*
 	Not needed: memory allocated on StageInit
 	if (stage->mNumberBalls > stage->mNumberBallsAllocated)
