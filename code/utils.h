@@ -37,5 +37,6 @@ SAnimatedSprite CreateAnimationSprite(LCDBitmap** bitmaps, int numberFrames, int
 
 void DrawText(PlaydateAPI* pd, const char* str, float x, float y, LCDFont* font, bool centered);
 void DrawAnimatedSprite(PlaydateAPI* pd, SAnimatedSprite* animatedData, float x, float y);
+void DrawAnimatedSpriteRotated(PlaydateAPI* pd, SAnimatedSprite* animatedData, float x, float y, float angle);
 
 #endif

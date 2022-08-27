@@ -13,7 +13,7 @@ LCDBitmap* loadImageAtPath(PlaydateAPI* pd, const char* path)
 	return img;
 }
 
-void DrawAnimatedSprite(PlaydateAPI* pd, SAnimatedSprite* animatedData, float x, float y)
+void DrawAnimatedSpriteRotated(PlaydateAPI* pd, SAnimatedSprite* animatedData, float x, float y, float angle)
 {
 	if (animatedData->mHasfinished)
 	{
@@ -33,7 +33,13 @@ void DrawAnimatedSprite(PlaydateAPI* pd, SAnimatedSprite* animatedData, float x,
 			animatedData->mFrameCount = 0;
 		}
 	}
-	pd->graphics->drawBitmap(animatedData->mBitmaps[animatedData->mCurrentFrame], x, y, animatedData->mFlipFlag);
+	//pd->graphics->drawBitmap(animatedData->mBitmaps[animatedData->mCurrentFrame], x, y, animatedData->mFlipFlag);
+	pd->graphics->drawRotatedBitmap(animatedData->mBitmaps[animatedData->mCurrentFrame], x, y, angle, 0.5f, 0.5f, 1.0f, 1.0f);
+}
+
+void DrawAnimatedSprite(PlaydateAPI* pd, SAnimatedSprite* animatedData, float x, float y)
+{
+	DrawAnimatedSpriteRotated(pd, animatedData, x, y, 0.0f);
 }
 
 float RandomFloat() 

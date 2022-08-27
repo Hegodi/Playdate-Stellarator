@@ -103,7 +103,7 @@ void StageDraw(SStage* stage)
 	if (stage->mIsGrabbing)
 	{
 		Game.mPd->graphics->drawLine(stage->mAnchorPos.x, stage->mAnchorPos.y, stage->mHookPos.x, stage->mHookPos.y, 2, 0);
-		DrawAnimatedSprite(Game.mPd, &stage->mGrabberSprite, stage->mHookPos.x - 16, stage->mHookPos.y - 16);
+		DrawAnimatedSprite(Game.mPd, &stage->mGrabberSprite, stage->mHookPos.x, stage->mHookPos.y);
 	}
 
 	for (int i = 0; i < stage->mMaxSlots; i++, y+=SOCKET_SIZE)
@@ -123,7 +123,7 @@ void StageDraw(SStage* stage)
 	{
 		if (ball->mCanMerge)
 		{
-			DrawAnimatedSprite(Game.mPd, &ball->mFXCanMerge, ball->mPos.x - 32, ball->mPos.y - 32);
+			DrawAnimatedSpriteRotated(Game.mPd, &ball->mFXCanMerge, ball->mPos.x, ball->mPos.y, ball->mAngle);
 		}
 		Game.mPd->graphics->drawBitmap(Game.mResources.mBalls[ball->mEnergy - 1], ball->mPos.x - 16, ball->mPos.y - 16, kBitmapUnflipped);
 	}
@@ -320,8 +320,8 @@ void StageUpdatePhysics(SStage* stage)
 					// Merge
 					stage->mScore += Points[b1->mEnergy];
 					int ind = (stage->mLastExplosionInd + 1) % MAX_EXPLOSIONS_FX;
-					stage->mPosExplosions[ind].x = (b1->mPos.x + b2->mPos.x) * 0.5f - 32;
-					stage->mPosExplosions[ind].y = (b1->mPos.y + b2->mPos.y) * 0.5f - 32;
+					stage->mPosExplosions[ind].x = (b1->mPos.x + b2->mPos.x) * 0.5f;
+					stage->mPosExplosions[ind].y = (b1->mPos.y + b2->mPos.y) * 0.5f;
 					stage->mExplosionsActive[ind] = true;
 					ResetAnimationSprite(&stage->mExplosionsFX[ind]);
 					stage->mLastExplosionInd = ind;
@@ -506,7 +506,7 @@ void StageUpdateInput(SStage* stage)
 
 	if (!stage->mIsGrabbing)
 	{
-		float deltaAngle = 0.5f*Game.mPd->system->getCrankChange();
+		float deltaAngle = Game.mPd->system->getCrankChange();
 		if (deltaAngle > 0.0f || deltaAngle < 0.0f)
 		{
 			stage->mGunAngle += deltaAngle;
@@ -535,6 +535,7 @@ void StageUpdateInput(SStage* stage)
 				stage->mBallsInSlots[stage->mSlotSelected]->mVel.x = stage->mAimDirection.x * SHOOT_SPEED;
 				stage->mBallsInSlots[stage->mSlotSelected]->mVel.y = stage->mAimDirection.y * SHOOT_SPEED;
 				stage->mBallsInSlots[stage->mSlotSelected]->mCanMerge = true;
+				stage->mBallsInSlots[stage->mSlotSelected]->mAngle = stage->mGunAngle + 45;
 				stage->mBallsInSlots[stage->mSlotSelected] = NULL;
 			}
 			else

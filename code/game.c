@@ -122,7 +122,6 @@ void UpdateMenu()
 	}
 }
 
-
 void UpdateSplashScreen()
 {
 	Game.mSplash.mTicks++;
