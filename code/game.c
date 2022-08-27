@@ -65,9 +65,22 @@ void AddScore(int score, int level)
 	SaveScoreboard();
 }
 
+void DrawGeneralBackground(int x, int y, bool title)
+{
+	Game.mPd->graphics->drawBitmap(Game.mResources.mMenuBackground, x, y, kBitmapUnflipped);
+	Game.mPd->graphics->drawBitmap(Game.mResources.mMenuFrame, x, y, kBitmapUnflipped);
+	Game.mPd->graphics->drawBitmap(Game.mResources.mMenuLogo, SCREEN_WIDTH/2 - 64 + 120, 75, kBitmapUnflipped);
+	Game.mPd->graphics->drawBitmap(Game.mResources.mMenuLogo, SCREEN_WIDTH/2 - 64 - 120, 75, kBitmapUnflipped);
+	if (title)
+	{
+		Game.mPd->graphics->drawBitmap(Game.mResources.mMenuTitle, SCREEN_WIDTH / 2 - 128 + x, 16 + y, kBitmapUnflipped);
+	}
+}
+
 void UpdateMenu()
 {
-	Game.mPd->graphics->drawBitmap(Game.mResources.mMenuBackground, 0, 0, kBitmapUnflipped);
+	DrawGeneralBackground(0, 0, true);
+
 	Game.mPd->graphics->setFont(Game.mResources.mFont);
 	int x = SCREEN_WIDTH / 2;
 	Game.mPd->graphics->fillRect(SCREEN_WIDTH / 2-60, 90, 120, 120, kColorWhite);
@@ -113,7 +126,7 @@ void UpdateMenu()
 void UpdateSplashScreen()
 {
 	Game.mSplash.mTicks++;
-	Game.mPd->graphics->drawBitmap(Game.mResources.mSplashBackground, 0, 0, kBitmapUnflipped);
+	Game.mPd->graphics->drawBitmap(Game.mResources.mMenuBackground, 0, 0, kBitmapUnflipped);
 
 	if (Game.mSplash.mFlag == 0)
 	{
@@ -121,18 +134,22 @@ void UpdateSplashScreen()
 		{
 			Game.mSplash.mFlag = 1;
 			Game.mSplash.mTicks = 0;
+			Game.mSplash.mY = -200;
+			Game.mSplash.mX = -200;
 		}
 		DrawText(Game.mPd, "Hegodi Games", SCREEN_WIDTH / 2, 200, Game.mResources.mFont, true);
 	}
 	if (Game.mSplash.mFlag == 1)
 	{
 		DrawText(Game.mPd, "Hegodi Games", SCREEN_WIDTH / 2, 200, Game.mResources.mFont, true);
-		float factor = 1.0f / (1.0f + Game.mSplash.mTicks * 0.05f);
-		if (abs(Game.mSplash.mX) > 5.0f)
-		{
-			Game.mSplash.mX += 10.0f * factor;
-		}
-		Game.mSplash.mY = -abs(cos(Game.mSplash.mTicks * 0.1f) * 500) * factor * factor; 
+		Game.mPd->graphics->drawBitmap(Game.mResources.mMenuTitle, SCREEN_WIDTH/2 - 128, Game.mSplash.mY + 10, kBitmapUnflipped);
+		Game.mPd->graphics->drawBitmap(Game.mResources.mMenuLogo, SCREEN_WIDTH/2 - 64 + 120, Game.mSplash.mX + 75, kBitmapUnflipped);
+		Game.mPd->graphics->drawBitmap(Game.mResources.mMenuLogo, SCREEN_WIDTH/2 - 64 - 120, Game.mSplash.mX + 75, kBitmapUnflipped);
+
+		float factor = 5.0 / (1.0 + Game.mSplash.mTicks);
+		float factorSqr = factor * factor;
+		Game.mSplash.mY = -200 * cosf(Game.mSplash.mTicks/2.0f) * factorSqr;
+		Game.mSplash.mX = -200 * cosf(Game.mSplash.mTicks/4.0f) * factorSqr;
 
 		if (Game.mSplash.mTicks > 180)
 		{
@@ -141,13 +158,14 @@ void UpdateSplashScreen()
 			Game.mSplash.mX = 0;
 			Game.mSplash.mY = 0;
 		}
-		Game.mPd->graphics->drawBitmap(Game.mResources.mSplashTitle, Game.mSplash.mX, Game.mSplash.mY, kBitmapUnflipped);
 	}
 	else if (Game.mSplash.mFlag == 2)
 	{
-		DrawText(Game.mPd, "Hegodi Games", SCREEN_WIDTH / 2, 200 + Game.mSplash.mY, Game.mResources.mFont, true);
-		Game.mPd->graphics->drawBitmap(Game.mResources.mSplashTitle, Game.mSplash.mX, Game.mSplash.mY, kBitmapUnflipped);
-		Game.mPd->graphics->drawBitmap(Game.mResources.mMenuBackground, Game.mSplash.mX, Game.mSplash.mY + SCREEN_HEIGHT, kBitmapUnflipped);
+		//Game.mPd->graphics->drawBitmap(Game.mResources.mMenuTitle, SCREEN_WIDTH / 2 - 128, 16 + Game.mSplash.mY, kBitmapUnflipped);
+		Game.mPd->graphics->drawBitmap(Game.mResources.mMenuFrame, Game.mSplash.mX, Game.mSplash.mY + SCREEN_HEIGHT, kBitmapUnflipped);
+		Game.mPd->graphics->drawBitmap(Game.mResources.mMenuTitle, SCREEN_WIDTH / 2 - 128, 16, kBitmapUnflipped);
+		Game.mPd->graphics->drawBitmap(Game.mResources.mMenuLogo, SCREEN_WIDTH/2 - 64 + 120, 75, kBitmapUnflipped);
+		Game.mPd->graphics->drawBitmap(Game.mResources.mMenuLogo, SCREEN_WIDTH/2 - 64 - 120, 75, kBitmapUnflipped);
 		Game.mSplash.mY -= 5.0f;
 		if (Game.mSplash.mY < -SCREEN_HEIGHT)
 		{
@@ -158,7 +176,9 @@ void UpdateSplashScreen()
 
 void UpdateScoreboard()
 {
-	Game.mPd->graphics->drawBitmap(Game.mResources.mMenuBackground, 0, 0, kBitmapUnflipped);
+	DrawGeneralBackground(0, 0, true);
+
+
 	Game.mPd->graphics->setFont(Game.mResources.mFont);
 	int x = SCREEN_WIDTH / 2;
 	Game.mPd->graphics->fillRect(SCREEN_WIDTH / 2-120, 90, 240, 120, kColorWhite);
@@ -218,8 +238,9 @@ void LoadBitmaps()
 	Game.mResources.mSocket = loadImageAtPath(Game.mPd, "images/Socket");
 
 	Game.mResources.mMenuBackground = loadImageAtPath(Game.mPd, "images/MenuBG");
-	Game.mResources.mSplashBackground = loadImageAtPath(Game.mPd, "images/GrayBG");
-	Game.mResources.mSplashTitle = loadImageAtPath(Game.mPd, "images/Title");
+	Game.mResources.mMenuFrame = loadImageAtPath(Game.mPd, "images/MenuFrame");
+	Game.mResources.mMenuTitle = loadImageAtPath(Game.mPd, "images/Title");
+	Game.mResources.mMenuLogo = loadImageAtPath(Game.mPd, "images/RadLogo");
 	Game.mResources.mMarkerMenu = loadImageAtPath(Game.mPd, "images/MarkerMenu");
 
 	Game.mResources.mStageDamage = (LCDBitmap**)malloc(4 * sizeof(LCDBitmap*));
@@ -258,8 +279,9 @@ void CleanupGame()
 	Game.mPd->graphics->freeBitmap(Game.mResources.mStageBackground);
 	Game.mPd->graphics->freeBitmap(Game.mResources.mSocket);
 	Game.mPd->graphics->freeBitmap(Game.mResources.mMenuBackground);
-	Game.mPd->graphics->freeBitmap(Game.mResources.mSplashBackground);
-	Game.mPd->graphics->freeBitmap(Game.mResources.mSplashTitle);
+	Game.mPd->graphics->freeBitmap(Game.mResources.mMenuFrame);
+	Game.mPd->graphics->freeBitmap(Game.mResources.mMenuTitle);
+	Game.mPd->graphics->freeBitmap(Game.mResources.mMenuLogo);
 	Game.mPd->graphics->freeBitmap(Game.mResources.mArrow);
 
 	for (int i=0; i<6; i++)

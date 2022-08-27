@@ -40,6 +40,7 @@ void StageInit(SStage* stage, SStageConfig* config)
 	stage->mCountdown = 3;
 	stage->mTicks = 0;
 	stage->mTickNextSpawn = 30;
+	stage->mSlotSelected = 0;
 
 	stage->mScore = 0;
 
@@ -603,12 +604,10 @@ void StageSetupAtom(SBall* ball, int energy)
 	{
 	case 1:
 	case 2:
-		ball->mRadius = 8.0f;
-		break;
 	case 3:
-	case 4:
 		ball->mRadius = 12.0f;
 		break;
+	case 4:
 	case 5:
 	case 6:
 		ball->mRadius = 16.0f;

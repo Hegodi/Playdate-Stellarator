@@ -35,11 +35,13 @@ typedef struct
 	struct
 	{
 		LCDBitmap* mMenuBackground;
-		LCDBitmap* mSplashBackground;
-		LCDBitmap* mSplashTitle;
+		LCDBitmap* mMenuTitle;
+		LCDBitmap* mMenuLogo;
+		LCDBitmap* mMenuFrame;
+		LCDBitmap* mMarkerMenu;
+
 		LCDBitmap* mStageBackground;
 		LCDBitmap** mStageDamage;
-		LCDBitmap* mMarkerMenu;
 		LCDBitmap** mBalls;
 		LCDBitmap** mAtomSelectedFX;
 		LCDBitmap** mGrabberFX;
