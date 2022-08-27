@@ -1,7 +1,7 @@
-name=Merge
+name=Bifusion
 author=Hegodi Games
-description=Merge all the balls!!
-bundleID=com.hegodigames.merge
+description=Make the atoms collide to generated as much energy as possible!
+bundleID=com.hegodigames.bifusion
 version=1.0.0
 buildNumber=1
 imagePath=card.png

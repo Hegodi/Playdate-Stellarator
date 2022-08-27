@@ -1,7 +1,7 @@
 HEAP_SIZE      = 8388208
 STACK_SIZE     = 61800
 
-PRODUCT = Stellarator.pdx
+PRODUCT = Bifusion.pdx
 
 # Locate the SDK
 SDK = ${PLAYDATE_SDK_PATH}
@@ -13,13 +13,13 @@ ifeq ($(SDK),)
 $(error SDK path not found; set ENV value PLAYDATE_SDK_PATH)
 endif
 
+VPATH += code
 
 # List C source files here
-SRC = 	\
-       main.c \
-       game.c \
-       utils.c \
-       ball.c \
+SRC =  code/main.c \
+       code/game.c \
+       code/utils.c \
+       code/ball.c \
 
 # List all user directories here
 UINCDIR = 

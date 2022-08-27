@@ -25,8 +25,8 @@ set(CMAKE_CONFIGURATION_TYPES "Debug;Release")
 set(CMAKE_XCODE_GENERATE_SCHEME TRUE)
 
 # Game Name Customization
-set(PLAYDATE_GAME_NAME Stellarator)
-set(PLAYDATE_GAME_DEVICE Stellarator_DEVICE)
+set(PLAYDATE_GAME_NAME Bifusion)
+set(PLAYDATE_GAME_DEVICE Bifusion_DEVICE)
 
 project(${PLAYDATE_GAME_NAME} C ASM)
 
@@ -39,9 +39,9 @@ file(GLOB FONTS
 )
 
 if (TOOLCHAIN STREQUAL "armgcc")
-	add_executable(${PLAYDATE_GAME_DEVICE} ${SDK}/C_API/buildsupport/setup.c main.c game.c stage.c ball.c utils.c)
+	add_executable(${PLAYDATE_GAME_DEVICE} ${SDK}/C_API/buildsupport/setup.c code/main.c code/game.c code/stage.c code/ball.c code/utils.c)
 else()
-	add_library(${PLAYDATE_GAME_NAME} SHARED main.c game.c stage.c ball.c utils.c ${IMAGES} ${FONTS})
+	add_library(${PLAYDATE_GAME_NAME} SHARED code/main.c code/game.c code/stage.c code/ball.c code/utils.c ${IMAGES} ${FONTS})
 endif()
 
 include(${SDK}/C_API/buildsupport/playdate_game.cmake)
