@@ -91,6 +91,7 @@ void StageClear(SStage* stage)
 	stage->mNumberBalls = 0;
 	stage->mMaxNumberBalls = 0;
 	stage->mMaxSlots = 0;
+	stage->mBallGrabbed = NULL;
 	free(stage->mBalls);
 	free(stage->mBallsInSlots);
 	stage->mBalls = NULL;
@@ -99,7 +100,7 @@ void StageClear(SStage* stage)
 
 void StageDraw(SStage* stage)
 {
-	if (stage == NULL)
+	if (stage == NULL || stage->mBalls == NULL)
 	{
 		return;
 	}
@@ -452,7 +453,9 @@ void StageUpdateTutorial(SStage* stage)
 
 		if (stage->mTutorialStage > 5)
 		{
+			StageClear(stage);
 			Game.mMode = EMode_Menu;
+			return;
 		}
 	}
 
@@ -532,6 +535,7 @@ void StageUpdate(SStage* stage)
 
 		if (pushed & kButtonA)
 		{
+			StageClear(stage);
 			Game.mMode = EMode_Menu;
 		}
 		if (pushed & kButtonB)
@@ -559,7 +563,9 @@ void StageUpdate(SStage* stage)
 
 			if (pushed & kButtonA || pushed & kButtonB)
 			{
+				StageClear(stage);
 				Game.mMode = EMode_Menu;
+				return;
 			}
 		}
 		else
@@ -621,13 +627,17 @@ void StageUpdateInput(SStage* stage)
 	{
 		if (stage->mIsGrabbing != 0)
 		{
-			stage->mIsGrabbing = 0;
-			if (stage->mBallGrabbed != NULL)
+			if (stage->mBallGrabbed == NULL)
+			{
+				stage->mIsGrabbing = 0;
+			}
+			else if (stage->mBallGrabbed->mPos.x > GAMEPLAY_XMIN)
 			{
 				stage->mBallGrabbed->mUpdatePhysics = true;
 				stage->mBallGrabbed->mVel.x *= 0.1f;
 				stage->mBallGrabbed->mVel.y *= 0.1f;
 				stage->mBallGrabbed = NULL;
+				stage->mIsGrabbing = 0;
 			}
 		}
 		else
