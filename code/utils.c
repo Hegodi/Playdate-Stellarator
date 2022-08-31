@@ -1,5 +1,6 @@
 #include <stdlib.h>
 #include <stdio.h>
+#define _USE_MATH_DEFINES
 #include <math.h>
 #include "utils.h"
 
@@ -116,12 +117,12 @@ void DrawText(PlaydateAPI* pd, const char* str, float x, float y, LCDFont* font,
 
 //=============================================================================================================
 // Sounds
-AudioSample* CreateAudioSample(PlaydateAPI* pd, AudioNoteData* dataNotes, int numNotes)
+AudioSample* _CreateAudioSample(PlaydateAPI* pd, AudioNoteData* dataNotes, int numNotes)
 {
 	// This is fix for now
 	const int sampleRate = 44100;
 
-	float duration = 5.0;
+	float duration = 0.0;
 	AudioNoteData* noteData = dataNotes;
 	for (int i=0; i<numNotes; i++, noteData++)
 	{
@@ -133,26 +134,53 @@ AudioSample* CreateAudioSample(PlaydateAPI* pd, AudioNoteData* dataNotes, int nu
 
 	noteData = dataNotes;
 	int t = 0;
-	for (int i = 0; i < numNotes; i++, noteData++, t++)
+	for (int i = 0; i < numNotes; i++, noteData++)
 	{
-		int t = 0;
-		int step = 0;
-		int count = 0;
-		float freq =  (float)noteData->mFrequency / sampleRate;
-		for (int j = 0; j < numberSamples; j++)
+		uint8_t lastRaw = 0;
+		float freq =  2* M_PI * noteData->mFrequency / sampleRate;
+		int period = (int)(1.0f / freq);
+		uint8_t vol = noteData->volume * 255;
+		int noteSamples = noteData->duration * sampleRate;
+		int sampleAttack = noteData->attack * noteSamples;
+		float attackDelta = sampleAttack > 0 ? 1.0f / sampleAttack : 0.0f;
+		int sampleFade = (1.0f - noteData->fade)  * noteSamples;
+		float fadeDelta = sampleFade > 0 ? 1.0f / (noteSamples - sampleFade) : 0.0f;
+		float modulator = 0.0f;
+
+		if (sampleAttack == 0)
 		{
+			modulator = 1.0f;
+		}
+
+
+		for (int j = 0; j < noteSamples; j++, t++)
+		{
+			float rawData = 0;
 			switch (noteData->shape)
 			{
 			case EAudioShape_Sin:
-				soundData[t] = (uint8_t)(noteData->volume*255 * 0.5 * (1 + sin(t * freq)));
+				rawData = 0.5f * (1.0f + sin(t * freq));
 				break;
 			case EAudioShape_Noise:
+				if (j % period == 0)
+				{
+					rawData = rand() / (RAND_MAX+1.0f);
+					lastRaw = rawData;
+				}
+				else rawData = lastRaw;
+				break;
 			case EAudioShape_Square:
-			case EAudioShape_Triangle:
+				rawData = sin(t * freq) > 0.0f ? 1.0f : 0.0f;
+				break;
 			default:
 				pd->system->error("Note not implemented");
 				break;
 			}
+
+			soundData[t] = modulator *  vol * rawData;
+
+			if (j < sampleAttack)	modulator += attackDelta;
+			else if (j > sampleFade) modulator -= attackDelta;
 
 			/*
 			if (step % 2 == 1)

@@ -12,16 +12,8 @@
 SGame Game;
 SStage Stage;
 
-// Audio Callbacks
-
-int SoundCallbackMenu( void* context, int16_t* left, int16_t* right, int len)
-{
-	for (int x = 0; x < len; x++) {
-		left[x] = 50000;
-		right[x] = 50000;
-	}
-}
-
+//========================================================================================================
+// Static data 
 
 static SStageConfig StageConfigs[] = { 
 	{ 0, 3, 13, 0, 0, 0} ,
@@ -37,6 +29,12 @@ static const char* MenuStrings[] = {
 	"Hard",
 	"Scoreboard"
 };
+
+static AudioNoteData AudioDataMenuBeep[] = { { EAudioShape_Noise , 4000, 1.0f, 0.0f, 0.0f, 0.1f },
+                                             { EAudioShape_Noise , 4000, 1.0f, 0.0f, 0.0f, 0.1f } };
+
+
+//========================================================================================================
 
 void LoadScoreboard()
 {
@@ -270,15 +268,13 @@ void LoadBitmaps()
 	Game.mResources.mFont = Game.mPd->graphics->loadFont("fonts/font-full-circle", &outErr);
 	Game.mPd->graphics->setFont(Game.mResources.mFont);
 
-
-
 	Game.mSamplePlayer = Game.mPd->sound->sampleplayer->newPlayer();
 
-	AudioNoteData audioData[] = { EAudioShape_Sin , 1000, 1.0f, 0.1f, 0.1f, 1.0f };
-	AudioSample* sample = CreateAudioSample(Game.mPd, audioData, 1);
+	int// sz = sizeof(AudioDataMenuBeep) / sizeof(AudioDataMenuBeep[0]);
+	Au//dioSample* sample = CreateAudioSample(Game.mPd, AudioDataMenuBeep);
 
-	Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, sample);
-	Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 2, 1.0f);
+	G//ame.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, sample);
+	//Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 5, 1.0f);
 
 }
 

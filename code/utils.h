@@ -45,7 +45,6 @@ typedef enum
 {
 	EAudioShape_Sin,
 	EAudioShape_Square,
-	EAudioShape_Triangle,
 	EAudioShape_Noise
 } EAudioNoteShape;
 
@@ -58,6 +57,8 @@ typedef struct
 	float fade;				// [0.0f, 1.0f]	time to reach 0 volume at the end
 	float volume;			// [0.0f, 1.0f] target volume
 } AudioNoteData;
-AudioSample* CreateAudioSample(PlaydateAPI* pd, AudioNoteData* data);
+
+#define CreateAudioSample(PD, data) _CreateAudioSample(PD, data ,sizeof(data)/sizeof(data[0]));
+AudioSample* _CreateAudioSample(PlaydateAPI* pd, AudioNoteData* data, int count);
 
 #endif
