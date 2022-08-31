@@ -12,8 +12,9 @@ typedef struct
 	int mLevel;
 	int mMaxSlots;
 	int mMaxBalls;
-	int mSpawnMinPeriod;
-	int mSpawnMaxPeriod;
+	int mSpawnMinBalls;
+	int mSpawnDelayMin;
+	int mSpawnDelayMax;
 
 } SStageConfig;
 
@@ -32,8 +33,9 @@ typedef struct
 
 	int mMaxSlots;
 	int mSlotSelected;
-	int mSpawnMinPeriod;
-	int mSpawnDeltaPeriod;
+	int mSpawnMinBalls;
+	int mSpawnDelayMin;
+	int mSpawnDelayDelta;
 
 	unsigned int mTicks;
 	unsigned int mTickNextSpawn;
@@ -43,7 +45,6 @@ typedef struct
 	float mGunAngle;
 	int  mIsGrabbing;
 	SAnimatedSprite mGrabberSprite;
-	bool mMaxBallsReached;
 	unsigned int mNextId;
 
 	SAnimatedSprite mExplosionsFX[MAX_EXPLOSIONS_FX];

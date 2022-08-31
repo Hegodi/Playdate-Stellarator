@@ -13,10 +13,10 @@ SGame Game;
 SStage Stage;
 
 static SStageConfig StageConfigs[] = { 
-	{ 0, 3, 11, 60, 300 } ,
-	{ 1, 3, 11, 60, 300 } ,
-	{ 2, 2, 11, 60, 240 } ,
-	{ 3, 1, 11, 60, 180 } 
+	{ 0, 3, 13, 0, 0, 0} ,
+	{ 1, 3, 13, 3, 180, 90} ,
+	{ 2, 3, 13, 4, 120, 60} ,
+	{ 3, 3, 13, 5, 90, 30} 
 };
 
 static const char* MenuStrings[] = {

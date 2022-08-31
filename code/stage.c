@@ -19,6 +19,8 @@
 #define SPAWN_POINT_X 375
 #define SPAWN_POINT_Y 32
 
+#define ONE_MINUTE 1800
+
 static int Points[] = { 0, 4, 8, 16, 32, 64, 128 };
 
 void StageAddBall(SStage* stage, float x, float y, float vx, float vy, int energy);
@@ -63,9 +65,9 @@ void StageInit(SStage* stage, SStageConfig* config)
 	}
 	stage->mBallGrabbed = NULL;
 
-	stage->mSpawnMinPeriod = config->mSpawnMinPeriod;
-	stage->mSpawnDeltaPeriod = config->mSpawnMaxPeriod - config->mSpawnMinPeriod;
-	stage->mMaxBallsReached = false;
+	stage->mSpawnDelayMin = config->mSpawnDelayMin;
+	stage->mSpawnDelayDelta = config->mSpawnDelayMax - config->mSpawnDelayMin;
+	stage->mSpawnMinBalls = config->mSpawnMinBalls;
 
 	for (int i=0; i<MAX_EXPLOSIONS_FX; i++)
 	{
@@ -200,14 +202,13 @@ void StageUpdateSpawningBalls(SStage* stage)
 		{
 			StageAddBall(stage, SPAWN_POINT_X, SPAWN_POINT_Y, -(1.0f + rand() / (RAND_MAX + 1.0f)), 5.0f, 1 + rand() % 2);
 
-			if (stage->mNumberBalls == stage->mMaxNumberBalls)
+			if (stage->mNumberBalls < stage->mSpawnMinBalls)
 			{
-				stage->mMaxBallsReached = true;
-				stage->mTickNextSpawn = stage->mTicks + 5 * 30; // 5 seconds
+				stage->mTickNextSpawn = stage->mTicks + 30 + rand() % 30; // 1-2 seconds
 			}
 			else
 			{
-				stage->mTickNextSpawn = stage->mTicks + stage->mSpawnMinPeriod + rand() % stage->mSpawnDeltaPeriod;
+				stage->mTickNextSpawn = stage->mTicks + stage->mSpawnDelayMin + rand() % stage->mSpawnDelayDelta;
 			}
 		}
 	}
@@ -748,5 +749,4 @@ void StageDeleteBall(SStage* stage, unsigned int id)
 		}
 	}
 	stage->mNumberBalls--;
-	stage->mMaxBallsReached = false;
 }
