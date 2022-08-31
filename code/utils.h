@@ -39,4 +39,25 @@ void DrawText(PlaydateAPI* pd, const char* str, float x, float y, LCDFont* font,
 void DrawAnimatedSprite(PlaydateAPI* pd, SAnimatedSprite* animatedData, float x, float y);
 void DrawAnimatedSpriteRotated(PlaydateAPI* pd, SAnimatedSprite* animatedData, float x, float y, float angle);
 
+//=============================================================================================================
+// Sounds
+typedef enum 
+{
+	EAudioShape_Sin,
+	EAudioShape_Square,
+	EAudioShape_Triangle,
+	EAudioShape_Noise
+} EAudioNoteShape;
+
+typedef struct
+{
+	EAudioNoteShape shape;	// Shape of the signal
+	uint16_t mFrequency;	// Frequency in Hz
+	float duration;			// Duration in seconds
+	float attack;			// [0.0f, 1.0f] time to reach max volume at the begining
+	float fade;				// [0.0f, 1.0f]	time to reach 0 volume at the end
+	float volume;			// [0.0f, 1.0f] target volume
+} AudioNoteData;
+AudioSample* CreateAudioSample(PlaydateAPI* pd, AudioNoteData* data);
+
 #endif

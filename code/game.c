@@ -12,6 +12,17 @@
 SGame Game;
 SStage Stage;
 
+// Audio Callbacks
+
+int SoundCallbackMenu( void* context, int16_t* left, int16_t* right, int len)
+{
+	for (int x = 0; x < len; x++) {
+		left[x] = 50000;
+		right[x] = 50000;
+	}
+}
+
+
 static SStageConfig StageConfigs[] = { 
 	{ 0, 3, 13, 0, 0, 0} ,
 	{ 1, 3, 13, 3, 180, 90} ,
@@ -166,7 +177,6 @@ void UpdateSplashScreen()
 	}
 	else if (Game.mSplash.mFlag == 2)
 	{
-		//Game.mPd->graphics->drawBitmap(Game.mResources.mMenuTitle, SCREEN_WIDTH / 2 - 128, 16 + Game.mSplash.mY, kBitmapUnflipped);
 		Game.mPd->graphics->drawBitmap(Game.mResources.mMenuFrame, Game.mSplash.mX, Game.mSplash.mY + SCREEN_HEIGHT, kBitmapUnflipped);
 		Game.mPd->graphics->drawBitmap(Game.mResources.mMenuTitle, SCREEN_WIDTH / 2 - 128, 16, kBitmapUnflipped);
 		Game.mPd->graphics->drawBitmap(Game.mResources.mMenuLogo, SCREEN_WIDTH/2 - 64 + 120, 75, kBitmapUnflipped);
@@ -258,8 +268,17 @@ void LoadBitmaps()
 
 	const char *outErr;
 	Game.mResources.mFont = Game.mPd->graphics->loadFont("fonts/font-full-circle", &outErr);
-
 	Game.mPd->graphics->setFont(Game.mResources.mFont);
+
+
+
+	Game.mSamplePlayer = Game.mPd->sound->sampleplayer->newPlayer();
+
+	AudioNoteData audioData[] = { EAudioShape_Sin , 1000, 1.0f, 0.1f, 0.1f, 1.0f };
+	AudioSample* sample = CreateAudioSample(Game.mPd, audioData, 1);
+
+	Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, sample);
+	Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 2, 1.0f);
 
 }
 

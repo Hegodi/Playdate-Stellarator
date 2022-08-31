@@ -50,7 +50,10 @@ typedef struct
 		LCDBitmap* mArrow;
 
 		LCDFont* mFont;
+
 	} mResources;
+
+	SamplePlayer* mSamplePlayer;
 
 } SGame;
 

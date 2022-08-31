@@ -1,7 +1,7 @@
 name=Bifusion
 author=Hegodi Games
-description=Make the atoms collide to generated as much energy as possible!
+description= Puzzle Bobble meets 2048 with some extra sauce.
 bundleID=com.hegodigames.bifusion
-version=1.0.1
-buildNumber=2
+version=1.0.0
+buildNumber=23
 imagePath=card.png

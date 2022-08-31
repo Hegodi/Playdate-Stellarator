@@ -114,3 +114,66 @@ void DrawText(PlaydateAPI* pd, const char* str, float x, float y, LCDFont* font,
 	}
 }
 
+//=============================================================================================================
+// Sounds
+AudioSample* CreateAudioSample(PlaydateAPI* pd, AudioNoteData* dataNotes, int numNotes)
+{
+	// This is fix for now
+	const int sampleRate = 44100;
+
+	float duration = 5.0;
+	AudioNoteData* noteData = dataNotes;
+	for (int i=0; i<numNotes; i++, noteData++)
+	{
+		duration += noteData->duration;
+	}
+
+	int numberSamples = sampleRate * duration;
+	uint8_t* soundData = (uint8_t*)malloc(numberSamples);
+
+	noteData = dataNotes;
+	int t = 0;
+	for (int i = 0; i < numNotes; i++, noteData++, t++)
+	{
+		int t = 0;
+		int step = 0;
+		int count = 0;
+		float freq =  (float)noteData->mFrequency / sampleRate;
+		for (int j = 0; j < numberSamples; j++)
+		{
+			switch (noteData->shape)
+			{
+			case EAudioShape_Sin:
+				soundData[t] = (uint8_t)(noteData->volume*255 * 0.5 * (1 + sin(t * freq)));
+				break;
+			case EAudioShape_Noise:
+			case EAudioShape_Square:
+			case EAudioShape_Triangle:
+			default:
+				pd->system->error("Note not implemented");
+				break;
+			}
+
+			/*
+			if (step % 2 == 1)
+			{
+				soundData[i] = 0;
+			}
+			else
+			{
+				soundData[i] = amplitud;
+			}
+
+			count++;
+			if (count >= width)
+			{
+				step++;
+				count = 0;
+			}
+			*/
+		}
+	}
+
+	AudioSample* sample = pd->sound->sample->newSampleFromData(soundData, kSound8bitMono, sampleRate, numberSamples);
+	return sample;
+}
