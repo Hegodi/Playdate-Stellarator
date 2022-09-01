@@ -51,6 +51,20 @@ typedef struct
 
 		LCDFont* mFont;
 
+		struct  
+		{
+			AudioSample* mSampleMenuSelect;
+			AudioSample* mSampleMenuClick;
+			AudioSample* mSampleInGameShoot;
+			AudioSample* mSampleInGameGrab_Empty;
+			AudioSample* mSampleInGameGrab_Full;
+			AudioSample* mSampleInMergeFail;
+			AudioSample* mSampleInMergeDone;
+			AudioSample* mSampleIntroA;
+			AudioSample* mSampleIntroB;
+			AudioSample* mSampleIntroC;
+		} mAudio;
+
 	} mResources;
 
 	SamplePlayer* mSamplePlayer;

@@ -30,8 +30,105 @@ static const char* MenuStrings[] = {
 	"Scoreboard"
 };
 
-static AudioNoteData AudioDataMenuBeep[] = { { EAudioShape_Noise , 4000, 1.0f, 0.0f, 0.0f, 0.1f },
-                                             { EAudioShape_Noise , 4000, 1.0f, 0.0f, 0.0f, 0.1f } };
+#define NOTE_C 262
+#define NOTE_D 294
+#define NOTE_E 330
+#define NOTE_F 349
+#define NOTE_G 392
+#define NOTE_A 440
+#define NOTE_B 494
+
+static AudioNoteData AudioDataMenuSelect[] = { {EAudioShape_Sin , NOTE_G, 0.2f, 0.2f, 0.2f, 0.2f },
+											 };
+
+static AudioNoteData AudioDataMenuClick[] = { {EAudioShape_Sin , NOTE_F, 0.05f, 0.2f, 0.f, 0.2f },
+											  {EAudioShape_Sin , 2 * NOTE_G, 0.10f, 0.0f, 0.5f, 0.3f},
+											};
+
+static AudioNoteData AudioDataInGameGrabEmpty[] = { {EAudioShape_NoiseSquare , 50, 1.5f, 1.0, 0.0f, 0.10f } };
+
+static AudioNoteData AudioDataInGameGrabFull[] = { {EAudioShape_NoiseSquare , 100, 1.5f, 0.1, 0.9f, 0.15f } };
+
+static AudioNoteData AudioDataInGameShoot[] = { {EAudioShape_NoiseSquare , 200, 0.1f, 0.0, 0.1f, 0.2f } ,
+												{EAudioShape_NoiseSquare , 100, 1.0f, 0.0f, 0.5f, 0.1f},
+											  };
+
+static AudioNoteData AudioDataMergeFail[]   = { {EAudioShape_Sin , 200, 0.05f, 0.1, 0.0f, 0.1f } ,
+												{EAudioShape_Sin , 500, 0.2f, 0.0f, 1.0f, 0.2f},
+											  };
+
+static AudioNoteData AudioDataMergeDone[]   = { {EAudioShape_Sin , 800, 0.2f, 0.1f, 0.1f, 0.3f },
+                                                {EAudioShape_Sin , 400, 0.4f, 0.1f, 0.5f, 0.15f },
+											  };
+
+static AudioNoteData AudioTest2[]          =  {{EAudioShape_Square , NOTE_C, 0.3f, 0.5f, 0.0f, 0.1f },
+                                               {EAudioShape_Square , NOTE_D, 0.2f, 0.0f, 0.2f, 0.1f },
+                                               {EAudioShape_Square , NOTE_E, 0.2f, 0.0f, 0.2f, 0.1f },
+                                               {EAudioShape_Square , NOTE_F, 0.2f, 0.0f, 0.2f, 0.1f },
+                                               {EAudioShape_Square , NOTE_A, 0.2f, 0.0f, 0.2f, 0.1f },
+                                               {EAudioShape_Square , NOTE_B, 0.2f, 0.0f, 0.2f, 0.1f },
+											 };
+
+static AudioNoteData AudioIntroA[] = { {EAudioShape_Sin , NOTE_E, 0.1f, 0.1f, 0.1f, 0.1f },
+									   {EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
+									   {EAudioShape_Sin , NOTE_C, 0.1f, 0.1f, 0.1f, 0.1f },
+									   {EAudioShape_Sin , NOTE_B, 0.3f, 0.1f, 0.1f, 0.1f },
+									   {EAudioShape_Sin , NOTE_A, 0.5f, 0.1f, 0.8f, 0.1f },
+									  };
+
+
+static AudioNoteData AudioIntroB[] = {  {EAudioShape_Noise, 200, 0.8f, 0.1f, 0.1f, 0.1f } ,
+								        {EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
+										{EAudioShape_Sin , NOTE_C, 0.1f, 0.1f, 0.1f, 0.1f },
+										{EAudioShape_Sin , NOTE_B, 0.3f, 0.1f, 0.1f, 0.1f },
+										{EAudioShape_Sin , NOTE_A, 0.1f, 0.1f, 0.1f, 0.1f },
+										{EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
+										{EAudioShape_Sin , NOTE_G, 0.2f, 0.1f, 0.1f, 0.1f },
+										{EAudioShape_Sin , NOTE_F, 0.8f, 0.1f, 0.5f, 0.1f },
+										{EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
+										{EAudioShape_Sin , NOTE_C, 0.1f, 0.1f, 0.1f, 0.1f },
+										{EAudioShape_Sin , NOTE_B, 0.3f, 0.1f, 0.1f, 0.1f },
+										{EAudioShape_Sin , NOTE_A, 0.1f, 0.1f, 0.1f, 0.1f },
+										{EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
+										{EAudioShape_Sin , NOTE_G, 0.2f, 0.1f, 0.1f, 0.1f },
+										{EAudioShape_Sin , NOTE_F, 0.8f, 0.1f, 0.5f, 0.1f },
+										{EAudioShape_Sin , NOTE_A, 0.1f, 0.1f, 0.1f, 0.1f },
+										{EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
+										{EAudioShape_Sin , NOTE_G, 0.2f, 0.1f, 0.1f, 0.1f },
+										{EAudioShape_Sin , NOTE_F, 0.8f, 0.1f, 0.5f, 0.1f },
+};
+static AudioNoteData AudioIntroC[] = { {EAudioShape_Noise, 200, 3.0f, 0.2f, 0.2f, 0.05f } };
+
+
+static AudioNoteData AudioIntro[]         =  { {EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_C, 0.1f, 0.1f, 0.1f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_B, 0.3f, 0.1f, 0.1f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_A, 0.5f, 0.1f, 0.8f, 0.1f },
+                                               {EAudioShape_NoiseSquare, 2000, 1.0f, 1.0f, 0.0f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_C, 0.1f, 0.1f, 0.1f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_B, 0.3f, 0.1f, 0.1f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_A, 0.1f, 0.1f, 0.1f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_G, 0.2f, 0.1f, 0.1f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_F, 0.8f, 0.1f, 0.5f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_C, 0.1f, 0.1f, 0.1f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_B, 0.3f, 0.1f, 0.1f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_A, 0.1f, 0.1f, 0.1f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_G, 0.2f, 0.1f, 0.1f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_F, 0.8f, 0.1f, 0.5f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_A, 0.1f, 0.1f, 0.1f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_G, 0.2f, 0.1f, 0.1f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_F, 0.8f, 0.1f, 0.5f, 0.1f },
+                                               {EAudioShape_NoiseSquare, 500, 2.0f, 0.1f, 0.0f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_A, 0.1f, 0.1f, 0.1f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_G, 0.1f, 0.1f, 0.1f, 0.1f },
+                                               {EAudioShape_Sin , NOTE_F, 0.4f, 0.1f, 0.5f, 0.1f },
+											 };
+
 
 
 //========================================================================================================
@@ -111,15 +208,28 @@ void UpdateMenu()
 	Game.mPd->system->getButtonState(&current, &pushed, NULL);
 	if (pushed & kButtonUp)
 	{
-		if (Game.mMenu.mIndexSel > 0) Game.mMenu.mIndexSel--;
+		if (Game.mMenu.mIndexSel > 0)
+		{
+			Game.mMenu.mIndexSel--;
+			Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleMenuSelect);
+			Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
+		}
 
 	}
 	else if (pushed & kButtonDown)
 	{
-		if (Game.mMenu.mIndexSel < 4) Game.mMenu.mIndexSel++;
+		if (Game.mMenu.mIndexSel < 4)
+		{
+			Game.mMenu.mIndexSel++;
+			Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleMenuSelect);
+			Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
+		}
+
 	}
 	else if (pushed & kButtonA)
 	{
+		Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleMenuClick);
+		Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 		if (Game.mMenu.mIndexSel > 0 && Game.mMenu.mIndexSel < 4)
 		{
 			StageInit(&Stage, &StageConfigs[Game.mMenu.mIndexSel]);
@@ -144,12 +254,15 @@ void UpdateSplashScreen()
 
 	if (Game.mSplash.mFlag == 0)
 	{
-		if (Game.mSplash.mTicks > 30)
+		if (Game.mSplash.mTicks > 90)
 		{
 			Game.mSplash.mFlag = 1;
 			Game.mSplash.mTicks = 0;
 			Game.mSplash.mY = -200;
 			Game.mSplash.mX = -200;
+			Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleIntroB);
+			Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
+
 		}
 		DrawText(Game.mPd, "Hegodi Games", SCREEN_WIDTH / 2, 200, Game.mResources.mFont, true);
 	}
@@ -171,6 +284,8 @@ void UpdateSplashScreen()
 			Game.mSplash.mTicks = 0;
 			Game.mSplash.mX = 0;
 			Game.mSplash.mY = 0;
+			Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleIntroC);
+			Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 		}
 	}
 	else if (Game.mSplash.mFlag == 2)
@@ -183,6 +298,8 @@ void UpdateSplashScreen()
 		if (Game.mSplash.mY < -SCREEN_HEIGHT)
 		{
 			Game.mMode = EMode_Menu;
+			Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleIntroA);
+			Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 		}
 	}
 }
@@ -219,7 +336,7 @@ void UpdateScoreboard()
 
 }
 
-void LoadBitmaps()
+void LoadResources()
 {
 	Game.mResources.mStageBackground = loadImageAtPath(Game.mPd, "images/StageBG");
 
@@ -268,21 +385,29 @@ void LoadBitmaps()
 	Game.mResources.mFont = Game.mPd->graphics->loadFont("fonts/font-full-circle", &outErr);
 	Game.mPd->graphics->setFont(Game.mResources.mFont);
 
-	Game.mSamplePlayer = Game.mPd->sound->sampleplayer->newPlayer();
 
-	int// sz = sizeof(AudioDataMenuBeep) / sizeof(AudioDataMenuBeep[0]);
-	Au//dioSample* sample = CreateAudioSample(Game.mPd, AudioDataMenuBeep);
+	Game.mResources.mAudio.mSampleMenuSelect = CreateAudioSample(Game.mPd, AudioDataMenuSelect);
+	Game.mResources.mAudio.mSampleMenuClick = CreateAudioSample(Game.mPd, AudioDataMenuClick);
+	Game.mResources.mAudio.mSampleInGameGrab_Empty = CreateAudioSample(Game.mPd, AudioDataInGameGrabEmpty);
+	Game.mResources.mAudio.mSampleInGameGrab_Full = CreateAudioSample(Game.mPd, AudioDataInGameGrabFull);
+	Game.mResources.mAudio.mSampleInGameShoot = CreateAudioSample(Game.mPd, AudioDataInGameShoot);
+	Game.mResources.mAudio.mSampleInMergeDone = CreateAudioSample(Game.mPd, AudioDataMergeDone);
+	Game.mResources.mAudio.mSampleInMergeFail = CreateAudioSample(Game.mPd, AudioDataMergeFail);
 
-	G//ame.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, sample);
-	//Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 5, 1.0f);
+	Game.mResources.mAudio.mSampleIntroA = CreateAudioSample(Game.mPd, AudioIntroA);
+	Game.mResources.mAudio.mSampleIntroB = CreateAudioSample(Game.mPd, AudioIntroB);
+	Game.mResources.mAudio.mSampleIntroC = CreateAudioSample(Game.mPd, AudioIntroC);
 
+	Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleIntroA);
+	Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 }
 
 void InitGame(PlaydateAPI* pd) 
 {
 	Game.mPd = pd;
+	Game.mSamplePlayer = Game.mPd->sound->sampleplayer->newPlayer();
 	srand(pd->system->getSecondsSinceEpoch(NULL));
-	LoadBitmaps();
+	LoadResources();
 	Game.mMode = EMode_SplashScreen;
 
 	Game.mSplash.mX = -SCREEN_WIDTH;
@@ -296,6 +421,7 @@ void InitGame(PlaydateAPI* pd)
 
 void CleanupGame()
 {
+	Game.mPd->sound->sampleplayer->freePlayer(Game.mSamplePlayer);
 	Game.mPd->graphics->freeBitmap(Game.mResources.mStageBackground);
 	Game.mPd->graphics->freeBitmap(Game.mResources.mSocket);
 	Game.mPd->graphics->freeBitmap(Game.mResources.mMenuBackground);

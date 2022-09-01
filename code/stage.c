@@ -229,11 +229,15 @@ void StageUpdatePhysics(SStage* stage)
 			if (ModuleSqr(&dst) > 1000000)
 			{
 				stage->mIsGrabbing = 2;
+				Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleInGameGrab_Empty);
+				Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 			}
 			if (stage->mHookPos.x > GAMEPLAY_XMAX ||
 				stage->mHookPos.y < GAMEPLAY_YMIN || stage->mHookPos.y > GAMEPLAY_YMAX)
 			{
 				stage->mIsGrabbing = 2;
+				Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleInGameGrab_Empty);
+				Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 			}
 		}
 		else if (stage->mIsGrabbing == 2)
@@ -254,6 +258,7 @@ void StageUpdatePhysics(SStage* stage)
 				stage->mBallsInSlots[stage->mSlotSelected] = stage->mBallGrabbed;
 				stage->mBallGrabbed = NULL;
 				stage->mIsGrabbing = 0;
+				Game.mPd->sound->sampleplayer->stop(Game.mSamplePlayer);
 			}
 		}
 
@@ -276,6 +281,8 @@ void StageUpdatePhysics(SStage* stage)
 					ball->mUpdatePhysics = false;
 					ball->mCanMerge = false;
 					stage->mIsGrabbing = 2;
+					Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleInGameGrab_Full);
+					Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 					break;
 				}
 			}
@@ -336,6 +343,8 @@ void StageUpdatePhysics(SStage* stage)
 				if ( (b1->mCanMerge || b2->mCanMerge) && (b1->mEnergy == b2->mEnergy))
 				{
 					// Merge
+					Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleInMergeDone);
+					Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 					stage->mScore += Points[b1->mEnergy];
 					int ind = (stage->mLastExplosionInd + 1) % MAX_EXPLOSIONS_FX;
 					stage->mPosExplosions[ind].x = (b1->mPos.x + b2->mPos.x) * 0.5f;
@@ -386,6 +395,11 @@ void StageUpdatePhysics(SStage* stage)
 					float v2n = Dot(&b2->mVel, &n);
 					float v1t = Dot(&b1->mVel, &t);
 					float v2t = Dot(&b2->mVel, &t);
+					if (b1->mCanMerge || b2->mCanMerge)
+					{
+						Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleInMergeFail);
+						Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
+					}
 					b1->mCanMerge = false;
 					b2->mCanMerge = false;
 
@@ -408,12 +422,22 @@ void StageUpdatePhysics(SStage* stage)
 			{
 				b1->mPos.x = GAMEPLAY_XMIN + b1->mRadius;
 				b1->mVel.x *= -ELASTIC_COEFFICIENT_WALL;
+				if (b1->mCanMerge)
+				{
+					Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleInMergeFail);
+					Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
+				}
 				b1->mCanMerge = false;
 			}
 			else if (b1->mPos.x > GAMEPLAY_XMAX - b1->mRadius && b1->mVel.x > 0.0f)
 			{
 				b1->mPos.x = GAMEPLAY_XMAX - b1->mRadius;;
 				b1->mVel.x *= -ELASTIC_COEFFICIENT_WALL;
+				if (b1->mCanMerge)
+				{
+					Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleInMergeFail);
+					Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
+				}
 				b1->mCanMerge = false;
 			}
 
@@ -421,12 +445,22 @@ void StageUpdatePhysics(SStage* stage)
 			{
 				b1->mPos.y = GAMEPLAY_YMIN + b1->mRadius;
 				b1->mVel.y *= -ELASTIC_COEFFICIENT_WALL;
+				if (b1->mCanMerge)
+				{
+					Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleInMergeFail);
+					Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
+				}
 				b1->mCanMerge = false;
 			}
 			else if (b1->mPos.y > GAMEPLAY_YMAX - b1->mRadius && b1->mVel.y > 0.0f)
 			{
 				b1->mPos.y = GAMEPLAY_YMAX - b1->mRadius;
 				b1->mVel.y *= -ELASTIC_COEFFICIENT_WALL;
+				if (b1->mCanMerge)
+				{
+					Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleInMergeFail);
+					Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
+				}
 				b1->mCanMerge = false;
 			}
 		}
@@ -442,6 +476,8 @@ void StageUpdateTutorial(SStage* stage)
 	Game.mPd->system->getButtonState(&current, &pushed, NULL);
 	if (pushed & kButtonA)
 	{
+		Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleMenuClick);
+		Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 		stage->mTutorialStage++;
 		if (stage->mTutorialStage == 1)
 		{
@@ -536,11 +572,15 @@ void StageUpdate(SStage* stage)
 
 		if (pushed & kButtonA)
 		{
+			Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleMenuClick);
+			Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 			StageClear(stage);
 			Game.mMode = EMode_Menu;
 		}
 		if (pushed & kButtonB)
 		{
+			Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleMenuClick);
+			Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 			stage->mIsPaused = false;
 		}
 		return;
@@ -564,6 +604,8 @@ void StageUpdate(SStage* stage)
 
 			if (pushed & kButtonA || pushed & kButtonB)
 			{
+				Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleMenuClick);
+				Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 				StageClear(stage);
 				Game.mMode = EMode_Menu;
 				return;
@@ -640,6 +682,7 @@ void StageUpdateInput(SStage* stage)
 				stage->mBallGrabbed = NULL;
 				stage->mIsGrabbing = 0;
 			}
+			Game.mPd->sound->sampleplayer->stop(Game.mSamplePlayer);
 		}
 		else
 		{
@@ -651,10 +694,14 @@ void StageUpdateInput(SStage* stage)
 				stage->mBallsInSlots[stage->mSlotSelected]->mCanMerge = true;
 				stage->mBallsInSlots[stage->mSlotSelected]->mAngle = stage->mGunAngle + 45;
 				stage->mBallsInSlots[stage->mSlotSelected] = NULL;
+				Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleInGameShoot);
+				Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 			}
 			else
 			{
 				stage->mIsGrabbing = 1;
+				Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleInGameGrab_Empty);
+				Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 			}
 		}
 	}
@@ -676,6 +723,8 @@ void StageUpdateInput(SStage* stage)
 	}
 	else if (pushed & kButtonB && stage->mTutorialStage == 0)
 	{
+		Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleMenuClick);
+		Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 		stage->mIsPaused = true;
 	}
 }

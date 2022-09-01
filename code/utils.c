@@ -121,6 +121,7 @@ AudioSample* _CreateAudioSample(PlaydateAPI* pd, AudioNoteData* dataNotes, int n
 {
 	// This is fix for now
 	const int sampleRate = 44100;
+	float const dt = 1.0f / sampleRate;
 
 	float duration = 0.0;
 	AudioNoteData* noteData = dataNotes;
@@ -133,12 +134,12 @@ AudioSample* _CreateAudioSample(PlaydateAPI* pd, AudioNoteData* dataNotes, int n
 	uint8_t* soundData = (uint8_t*)malloc(numberSamples);
 
 	noteData = dataNotes;
-	int t = 0;
+	float t = 0;
+	int ind = 0;
 	for (int i = 0; i < numNotes; i++, noteData++)
 	{
 		uint8_t lastRaw = 0;
-		float freq =  2* M_PI * noteData->mFrequency / sampleRate;
-		int period = (int)(1.0f / freq);
+		float angularFreq = 2 * M_PI * noteData->mFrequency;
 		uint8_t vol = noteData->volume * 255;
 		int noteSamples = noteData->duration * sampleRate;
 		int sampleAttack = noteData->attack * noteSamples;
@@ -153,34 +154,41 @@ AudioSample* _CreateAudioSample(PlaydateAPI* pd, AudioNoteData* dataNotes, int n
 		}
 
 
-		for (int j = 0; j < noteSamples; j++, t++)
+		for (int j = 0; j < noteSamples; j++, t+=dt, ind++)
 		{
 			float rawData = 0;
 			switch (noteData->shape)
 			{
 			case EAudioShape_Sin:
-				rawData = 0.5f * (1.0f + sin(t * freq));
+				rawData = sin(t * angularFreq);
+				break;
+			case EAudioShape_NoiseSin:
+			{
+				int sign = sin(t * angularFreq) > 0.0f ? 1.0f : 0.0f;
+				rawData = 0.5f * (1.0f + sin(t * angularFreq)) * rand() / (RAND_MAX + 1.0f);
+				break;
+			}
+			case EAudioShape_NoiseSquare:
+			{
+				int sign = sin(t * angularFreq) > 0.0f ? 1.0f : 0.0f;
+				rawData = sign * rand() / (RAND_MAX + 1.0f);
+				break;
+			}
+			case EAudioShape_Square:
+				rawData = sin(t * angularFreq) > 0.0f ? 1.0f : 0.0f;
 				break;
 			case EAudioShape_Noise:
-				if (j % period == 0)
-				{
-					rawData = rand() / (RAND_MAX+1.0f);
-					lastRaw = rawData;
-				}
-				else rawData = lastRaw;
-				break;
-			case EAudioShape_Square:
-				rawData = sin(t * freq) > 0.0f ? 1.0f : 0.0f;
+				rawData = rand() / (RAND_MAX + 1.0f);
 				break;
 			default:
 				pd->system->error("Note not implemented");
 				break;
 			}
 
-			soundData[t] = modulator *  vol * rawData;
+			soundData[ind] = modulator *  vol * rawData;
 
 			if (j < sampleAttack)	modulator += attackDelta;
-			else if (j > sampleFade) modulator -= attackDelta;
+			else if (j > sampleFade) modulator -= fadeDelta;
 
 			/*
 			if (step % 2 == 1)
