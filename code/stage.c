@@ -534,7 +534,7 @@ void StageUpdateTutorial(SStage* stage)
 		DrawText(Game.mPd, "If the ball you launched hit", x, y+5, Game.mResources.mFont, true);
 		DrawText(Game.mPd, "another ball of the same value", x, y+17, Game.mResources.mFont, true);
 		DrawText(Game.mPd, "(before hitting anything else)", x, y+29, Game.mResources.mFont, true);
-		DrawText(Game.mPd, "they will fusion and you will", x, y+41, Game.mResources.mFont, true);
+		DrawText(Game.mPd, "they will fuse and you will", x, y+41, Game.mResources.mFont, true);
 		DrawText(Game.mPd, "get points", x, y+53, Game.mResources.mFont, true);
 		DrawText(Game.mPd, "Pulse A to continue", x, y+80, Game.mResources.mFont, true);
 		break;
