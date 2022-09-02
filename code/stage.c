@@ -196,7 +196,7 @@ void StageUpdateSpawningBalls(SStage* stage)
 		if (stage->mNumberBalls == stage->mMaxNumberBalls-1)
 		{
 			stage->mIsGameOver = true;
-			AddScore(stage->mScore, stage->mLevel);
+			AddScore(stage->mScore, stage->mLevel-1);	// Tutorial is level 0, easy = 1
 			Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleGameOver);
 			Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 		}
