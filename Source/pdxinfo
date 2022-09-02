@@ -1,7 +1,7 @@
 name=Bifusion
 author=Hegodi Games
-description= Puzzle Bobble meets 2048 with some extra sauce.
+description= Puzzle Bobble (Bust-a-Move) meets 2048 with some extra sauce.
 bundleID=com.hegodigames.bifusion
 version=1.0.0
-buildNumber=23
+buildNumber=34
 imagePath=card.png

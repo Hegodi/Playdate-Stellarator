@@ -63,4 +63,6 @@ typedef struct
 #define CreateAudioSample(PD, data) _CreateAudioSample(PD, data ,sizeof(data)/sizeof(data[0]))
 AudioSample* _CreateAudioSample(PlaydateAPI* pd, AudioNoteData* data, int count);
 
+#define FreeSampleSafe(pd, audioSample) if (audioSample != NULL) pd->sound->sample->freeSample(audioSample)
+
 #endif

@@ -120,7 +120,7 @@ void DrawText(PlaydateAPI* pd, const char* str, float x, float y, LCDFont* font,
 AudioSample* _CreateAudioSample(PlaydateAPI* pd, AudioNoteData* dataNotes, int numNotes)
 {
 	// This is fix for now
-	const int sampleRate = 44100;
+	const uint32_t sampleRate = 44100;
 	float const dt = 1.0f / sampleRate;
 
 	float duration = 0.0;
@@ -131,7 +131,7 @@ AudioSample* _CreateAudioSample(PlaydateAPI* pd, AudioNoteData* dataNotes, int n
 	}
 
 	int numberSamples = sampleRate * duration;
-	uint8_t* soundData = (uint8_t*)malloc(numberSamples);
+	uint8_t* soundData = (uint8_t*)malloc(numberSamples*sizeof(uint8_t));
 
 	noteData = dataNotes;
 	float t = 0;
@@ -145,7 +145,7 @@ AudioSample* _CreateAudioSample(PlaydateAPI* pd, AudioNoteData* dataNotes, int n
 		int sampleAttack = noteData->attack * noteSamples;
 		float attackDelta = sampleAttack > 0 ? 1.0f / sampleAttack : 0.0f;
 		int sampleFade = (1.0f - noteData->fade)  * noteSamples;
-		float fadeDelta = sampleFade > 0 ? 1.0f / (noteSamples - sampleFade) : 0.0f;
+		float fadeDelta = sampleFade < noteSamples ? 1.0f / (noteSamples - sampleFade) : 0.0f;
 		float modulator = 0.0f;
 
 		if (sampleAttack == 0)
@@ -160,7 +160,7 @@ AudioSample* _CreateAudioSample(PlaydateAPI* pd, AudioNoteData* dataNotes, int n
 			switch (noteData->shape)
 			{
 			case EAudioShape_Sin:
-				rawData = sin(t * angularFreq);
+				rawData = 0.5f*(1.0f + cos(t * angularFreq));
 				break;
 			case EAudioShape_NoiseSin:
 			{
@@ -190,26 +190,14 @@ AudioSample* _CreateAudioSample(PlaydateAPI* pd, AudioNoteData* dataNotes, int n
 			if (j < sampleAttack)	modulator += attackDelta;
 			else if (j > sampleFade) modulator -= fadeDelta;
 
-			/*
-			if (step % 2 == 1)
+			if (ind >= numberSamples)
 			{
-				soundData[i] = 0;
+				pd->system->error("ERROR creating sounds!!");
 			}
-			else
-			{
-				soundData[i] = amplitud;
-			}
-
-			count++;
-			if (count >= width)
-			{
-				step++;
-				count = 0;
-			}
-			*/
 		}
 	}
 
 	AudioSample* sample = pd->sound->sample->newSampleFromData(soundData, kSound8bitMono, sampleRate, numberSamples);
+	//AudioSample* sample = pd->sound->sample->newSampleFromData(soundData, kSound8bitMono, sampleRate, numberSamples);
 	return sample;
 }

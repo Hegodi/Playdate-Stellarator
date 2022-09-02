@@ -197,6 +197,8 @@ void StageUpdateSpawningBalls(SStage* stage)
 		{
 			stage->mIsGameOver = true;
 			AddScore(stage->mScore, stage->mLevel);
+			Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleGameOver);
+			Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 		}
 		else
 		{
@@ -641,6 +643,21 @@ void StageUpdate(SStage* stage)
 
 		if (stage->mTicks > 30)
 		{
+			if (stage->mCountdown == 2)
+			{
+				Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleCountdown3);
+				Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
+			}
+			else if (stage->mCountdown == 1)
+			{
+				Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleCountdown2);
+				Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
+			}
+			else if (stage->mCountdown == 0)
+			{
+				Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleCountdown1);
+				Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
+			}
 			stage->mCountdown--;
 			stage->mTicks = 0;
 		}
@@ -709,6 +726,8 @@ void StageUpdateInput(SStage* stage)
 	{
 		if (stage->mSlotSelected > 0)
 		{
+			Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleMenuSelect);
+			Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 			stage->mSlotSelected--;
 			StageUpdateAimDirection(stage);
 		}
@@ -717,6 +736,8 @@ void StageUpdateInput(SStage* stage)
 	{
 		if (stage->mSlotSelected < stage->mMaxSlots - 1)
 		{
+			Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleMenuSelect);
+			Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 			stage->mSlotSelected++;
 			StageUpdateAimDirection(stage);
 		}

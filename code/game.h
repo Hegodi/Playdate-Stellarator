@@ -60,9 +60,10 @@ typedef struct
 			AudioSample* mSampleInGameGrab_Full;
 			AudioSample* mSampleInMergeFail;
 			AudioSample* mSampleInMergeDone;
-			AudioSample* mSampleIntroA;
-			AudioSample* mSampleIntroB;
-			AudioSample* mSampleIntroC;
+			AudioSample* mSampleGameOver;
+			AudioSample* mSampleCountdown3;
+			AudioSample* mSampleCountdown2;
+			AudioSample* mSampleCountdown1;
 		} mAudio;
 
 	} mResources;

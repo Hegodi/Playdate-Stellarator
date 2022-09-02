@@ -38,98 +38,41 @@ static const char* MenuStrings[] = {
 #define NOTE_A 440
 #define NOTE_B 494
 
-static AudioNoteData AudioDataMenuSelect[] = { {EAudioShape_Sin , NOTE_G, 0.2f, 0.2f, 0.2f, 0.2f },
-											 };
+static AudioNoteData AudioDataMenuSelect[] = { {EAudioShape_Sin , NOTE_D, 0.05, 0.2f, 0.f, 0.1f },
+											   {EAudioShape_Sin , 2 * NOTE_E, 0.05f, 0.0f, 0.5f, 0.2f},
+											};
+
 
 static AudioNoteData AudioDataMenuClick[] = { {EAudioShape_Sin , NOTE_F, 0.05f, 0.2f, 0.f, 0.2f },
 											  {EAudioShape_Sin , 2 * NOTE_G, 0.10f, 0.0f, 0.5f, 0.3f},
 											};
 
-static AudioNoteData AudioDataInGameGrabEmpty[] = { {EAudioShape_NoiseSquare , 50, 1.5f, 1.0, 0.0f, 0.10f } };
+static AudioNoteData AudioDataInGameGrabEmpty[] = { {EAudioShape_NoiseSquare , 50, 1.0f, 1.0, 0.0f, 0.10f } };
 
-static AudioNoteData AudioDataInGameGrabFull[] = { {EAudioShape_NoiseSquare , 100, 1.5f, 0.1, 0.9f, 0.15f } };
+static AudioNoteData AudioDataInGameGrabFull[] = { {EAudioShape_NoiseSquare , 100, 1.0f, 0.1, 0.9f, 0.15f } };
 
 static AudioNoteData AudioDataInGameShoot[] = { {EAudioShape_NoiseSquare , 200, 0.1f, 0.0, 0.1f, 0.2f } ,
 												{EAudioShape_NoiseSquare , 100, 1.0f, 0.0f, 0.5f, 0.1f},
 											  };
 
-static AudioNoteData AudioDataMergeFail[]   = { {EAudioShape_Sin , 200, 0.05f, 0.1, 0.0f, 0.1f } ,
-												{EAudioShape_Sin , 500, 0.2f, 0.0f, 1.0f, 0.2f},
+static AudioNoteData AudioDataMergeFail[]   = { {EAudioShape_Sin , 100, 0.05f, 0.1, 0.0f, 0.1f } ,
+												{EAudioShape_Sin , 150, 0.2f, 0.0f, 1.0f, 0.2f},
 											  };
 
-static AudioNoteData AudioDataMergeDone[]   = { {EAudioShape_Sin , 800, 0.2f, 0.1f, 0.1f, 0.3f },
-                                                {EAudioShape_Sin , 400, 0.4f, 0.1f, 0.5f, 0.15f },
+static AudioNoteData AudioDataMergeDone[]   = { {EAudioShape_Noise, 100, 0.1f, 0.1f, 0.1f, 0.3f },
+                                                {EAudioShape_Noise, 100, 0.3f, 0.1f, 0.1f, 0.15f },
+                                                {EAudioShape_Noise, 100, 0.15f, 0.1f, 0.5f, 0.26f },
 											  };
 
-static AudioNoteData AudioTest2[]          =  {{EAudioShape_Square , NOTE_C, 0.3f, 0.5f, 0.0f, 0.1f },
-                                               {EAudioShape_Square , NOTE_D, 0.2f, 0.0f, 0.2f, 0.1f },
-                                               {EAudioShape_Square , NOTE_E, 0.2f, 0.0f, 0.2f, 0.1f },
-                                               {EAudioShape_Square , NOTE_F, 0.2f, 0.0f, 0.2f, 0.1f },
-                                               {EAudioShape_Square , NOTE_A, 0.2f, 0.0f, 0.2f, 0.1f },
-                                               {EAudioShape_Square , NOTE_B, 0.2f, 0.0f, 0.2f, 0.1f },
-											 };
+static AudioNoteData AudioDataGameOver[] = { {EAudioShape_Square , NOTE_A, 0.2f, 0.1f, 0.1f, 0.3f },
+                                                {EAudioShape_Square , NOTE_F, 0.4f, 0.1f, 0.5f, 0.15f },
+                                                {EAudioShape_Square , NOTE_B, 0.2f, 0.1f, 0.5f, 0.3f },
+                                                {EAudioShape_Square , NOTE_E, 0.8f, 0.1f, 0.5f, 0.3f },
+											  };
 
-static AudioNoteData AudioIntroA[] = { {EAudioShape_Sin , NOTE_E, 0.1f, 0.1f, 0.1f, 0.1f },
-									   {EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
-									   {EAudioShape_Sin , NOTE_C, 0.1f, 0.1f, 0.1f, 0.1f },
-									   {EAudioShape_Sin , NOTE_B, 0.3f, 0.1f, 0.1f, 0.1f },
-									   {EAudioShape_Sin , NOTE_A, 0.5f, 0.1f, 0.8f, 0.1f },
-									  };
-
-
-static AudioNoteData AudioIntroB[] = {  {EAudioShape_Noise, 200, 0.8f, 0.1f, 0.1f, 0.1f } ,
-								        {EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
-										{EAudioShape_Sin , NOTE_C, 0.1f, 0.1f, 0.1f, 0.1f },
-										{EAudioShape_Sin , NOTE_B, 0.3f, 0.1f, 0.1f, 0.1f },
-										{EAudioShape_Sin , NOTE_A, 0.1f, 0.1f, 0.1f, 0.1f },
-										{EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
-										{EAudioShape_Sin , NOTE_G, 0.2f, 0.1f, 0.1f, 0.1f },
-										{EAudioShape_Sin , NOTE_F, 0.8f, 0.1f, 0.5f, 0.1f },
-										{EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
-										{EAudioShape_Sin , NOTE_C, 0.1f, 0.1f, 0.1f, 0.1f },
-										{EAudioShape_Sin , NOTE_B, 0.3f, 0.1f, 0.1f, 0.1f },
-										{EAudioShape_Sin , NOTE_A, 0.1f, 0.1f, 0.1f, 0.1f },
-										{EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
-										{EAudioShape_Sin , NOTE_G, 0.2f, 0.1f, 0.1f, 0.1f },
-										{EAudioShape_Sin , NOTE_F, 0.8f, 0.1f, 0.5f, 0.1f },
-										{EAudioShape_Sin , NOTE_A, 0.1f, 0.1f, 0.1f, 0.1f },
-										{EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
-										{EAudioShape_Sin , NOTE_G, 0.2f, 0.1f, 0.1f, 0.1f },
-										{EAudioShape_Sin , NOTE_F, 0.8f, 0.1f, 0.5f, 0.1f },
-};
-static AudioNoteData AudioIntroC[] = { {EAudioShape_Noise, 200, 3.0f, 0.2f, 0.2f, 0.05f } };
-
-
-static AudioNoteData AudioIntro[]         =  { {EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_C, 0.1f, 0.1f, 0.1f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_B, 0.3f, 0.1f, 0.1f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_A, 0.5f, 0.1f, 0.8f, 0.1f },
-                                               {EAudioShape_NoiseSquare, 2000, 1.0f, 1.0f, 0.0f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_C, 0.1f, 0.1f, 0.1f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_B, 0.3f, 0.1f, 0.1f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_A, 0.1f, 0.1f, 0.1f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_G, 0.2f, 0.1f, 0.1f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_F, 0.8f, 0.1f, 0.5f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_C, 0.1f, 0.1f, 0.1f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_B, 0.3f, 0.1f, 0.1f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_A, 0.1f, 0.1f, 0.1f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_G, 0.2f, 0.1f, 0.1f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_F, 0.8f, 0.1f, 0.5f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_A, 0.1f, 0.1f, 0.1f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_A, 0.2f, 0.1f, 0.1f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_G, 0.2f, 0.1f, 0.1f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_F, 0.8f, 0.1f, 0.5f, 0.1f },
-                                               {EAudioShape_NoiseSquare, 500, 2.0f, 0.1f, 0.0f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_A, 0.1f, 0.1f, 0.1f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_G, 0.1f, 0.1f, 0.1f, 0.1f },
-                                               {EAudioShape_Sin , NOTE_F, 0.4f, 0.1f, 0.5f, 0.1f },
-											 };
-
-
+static AudioNoteData AudioDataCountdown3[]  = { {EAudioShape_Sin , NOTE_D, 0.4f, 0.1f, 0.1f, 0.3f }};
+static AudioNoteData AudioDataCountdown2[]  = { {EAudioShape_Sin , NOTE_F, 0.4f, 0.1f, 0.1f, 0.3f }};
+static AudioNoteData AudioDataCountdown1[]  = { {EAudioShape_Sin , NOTE_B, 0.4f, 0.1f, 0.1f, 0.3f }};
 
 //========================================================================================================
 
@@ -254,14 +197,18 @@ void UpdateSplashScreen()
 
 	if (Game.mSplash.mFlag == 0)
 	{
-		if (Game.mSplash.mTicks > 90)
+		if (Game.mSplash.mTicks > 2)
 		{
+			// Load Sounds Part 2
+			Game.mResources.mAudio.mSampleInGameShoot = CreateAudioSample(Game.mPd, AudioDataInGameShoot);
+			Game.mResources.mAudio.mSampleInMergeDone = CreateAudioSample(Game.mPd, AudioDataMergeDone);
+
 			Game.mSplash.mFlag = 1;
 			Game.mSplash.mTicks = 0;
 			Game.mSplash.mY = -200;
 			Game.mSplash.mX = -200;
-			Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleIntroB);
-			Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
+			//Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleIntroB);
+			//Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 
 		}
 		DrawText(Game.mPd, "Hegodi Games", SCREEN_WIDTH / 2, 200, Game.mResources.mFont, true);
@@ -278,14 +225,18 @@ void UpdateSplashScreen()
 		Game.mSplash.mY = -200 * cosf(Game.mSplash.mTicks/2.0f) * factorSqr;
 		Game.mSplash.mX = -200 * cosf(Game.mSplash.mTicks/4.0f) * factorSqr;
 
-		if (Game.mSplash.mTicks > 180)
+		if (Game.mSplash.mTicks > 30)
 		{
+			// Load Sounds Part 3
+			Game.mResources.mAudio.mSampleInMergeFail = CreateAudioSample(Game.mPd, AudioDataMergeFail);
+			Game.mResources.mAudio.mSampleCountdown1 = CreateAudioSample(Game.mPd, AudioDataCountdown1);
+			Game.mResources.mAudio.mSampleCountdown2 = CreateAudioSample(Game.mPd, AudioDataCountdown2);
+			Game.mResources.mAudio.mSampleCountdown3 = CreateAudioSample(Game.mPd, AudioDataCountdown3);
+
 			Game.mSplash.mFlag = 2;
 			Game.mSplash.mTicks = 0;
 			Game.mSplash.mX = 0;
 			Game.mSplash.mY = 0;
-			Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleIntroC);
-			Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 		}
 	}
 	else if (Game.mSplash.mFlag == 2)
@@ -297,9 +248,12 @@ void UpdateSplashScreen()
 		Game.mSplash.mY -= 5.0f;
 		if (Game.mSplash.mY < -SCREEN_HEIGHT)
 		{
+			// Load Sounds Part 4
+			Game.mResources.mAudio.mSampleGameOver = CreateAudioSample(Game.mPd, AudioDataGameOver);
+
 			Game.mMode = EMode_Menu;
-			Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleIntroA);
-			Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
+			//Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleIntro);
+			//Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 		}
 	}
 }
@@ -331,6 +285,8 @@ void UpdateScoreboard()
 	Game.mPd->system->getButtonState(&current, &pushed, NULL);
 	if (pushed & kButtonA || pushed & kButtonB)
 	{
+		Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleMenuClick);
+		Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 		Game.mMode = EMode_Menu;
 	}
 
@@ -385,21 +341,26 @@ void LoadResources()
 	Game.mResources.mFont = Game.mPd->graphics->loadFont("fonts/font-full-circle", &outErr);
 	Game.mPd->graphics->setFont(Game.mResources.mFont);
 
+	Game.mResources.mAudio.mSampleMenuSelect = NULL;
+	Game.mResources.mAudio.mSampleMenuClick = NULL;
+	Game.mResources.mAudio.mSampleInGameShoot = NULL;
+	Game.mResources.mAudio.mSampleInGameGrab_Empty = NULL;
+	Game.mResources.mAudio.mSampleInGameGrab_Full = NULL;
+	Game.mResources.mAudio.mSampleInMergeFail = NULL;
+	Game.mResources.mAudio.mSampleInMergeDone = NULL;
+	Game.mResources.mAudio.mSampleGameOver = NULL;
+	Game.mResources.mAudio.mSampleCountdown3 = NULL;
+	Game.mResources.mAudio.mSampleCountdown2 = NULL;
+	Game.mResources.mAudio.mSampleCountdown1 = NULL;
 
+	// Load Sounds Part 1
 	Game.mResources.mAudio.mSampleMenuSelect = CreateAudioSample(Game.mPd, AudioDataMenuSelect);
 	Game.mResources.mAudio.mSampleMenuClick = CreateAudioSample(Game.mPd, AudioDataMenuClick);
 	Game.mResources.mAudio.mSampleInGameGrab_Empty = CreateAudioSample(Game.mPd, AudioDataInGameGrabEmpty);
 	Game.mResources.mAudio.mSampleInGameGrab_Full = CreateAudioSample(Game.mPd, AudioDataInGameGrabFull);
-	Game.mResources.mAudio.mSampleInGameShoot = CreateAudioSample(Game.mPd, AudioDataInGameShoot);
-	Game.mResources.mAudio.mSampleInMergeDone = CreateAudioSample(Game.mPd, AudioDataMergeDone);
-	Game.mResources.mAudio.mSampleInMergeFail = CreateAudioSample(Game.mPd, AudioDataMergeFail);
 
-	Game.mResources.mAudio.mSampleIntroA = CreateAudioSample(Game.mPd, AudioIntroA);
-	Game.mResources.mAudio.mSampleIntroB = CreateAudioSample(Game.mPd, AudioIntroB);
-	Game.mResources.mAudio.mSampleIntroC = CreateAudioSample(Game.mPd, AudioIntroC);
-
-	Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleIntroA);
-	Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
+	//Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleIntroA);
+	//Game.mPd->sound->sampleplayer->play(Game.mSamplePlayer, 1, 1.0f);
 }
 
 void InitGame(PlaydateAPI* pd) 
@@ -421,6 +382,18 @@ void InitGame(PlaydateAPI* pd)
 
 void CleanupGame()
 {
+	FreeSampleSafe(Game.mPd, Game.mResources.mAudio.mSampleCountdown1);
+	FreeSampleSafe(Game.mPd, Game.mResources.mAudio.mSampleCountdown2);
+	FreeSampleSafe(Game.mPd, Game.mResources.mAudio.mSampleCountdown3);
+	FreeSampleSafe(Game.mPd, Game.mResources.mAudio.mSampleMenuClick);
+	FreeSampleSafe(Game.mPd, Game.mResources.mAudio.mSampleMenuSelect);
+	FreeSampleSafe(Game.mPd, Game.mResources.mAudio.mSampleInGameGrab_Empty);
+	FreeSampleSafe(Game.mPd, Game.mResources.mAudio.mSampleInGameGrab_Full);
+	FreeSampleSafe(Game.mPd, Game.mResources.mAudio.mSampleInGameShoot);
+	FreeSampleSafe(Game.mPd, Game.mResources.mAudio.mSampleInMergeDone);
+	FreeSampleSafe(Game.mPd, Game.mResources.mAudio.mSampleInMergeFail);
+	FreeSampleSafe(Game.mPd, Game.mResources.mAudio.mSampleGameOver);
+
 	Game.mPd->sound->sampleplayer->freePlayer(Game.mSamplePlayer);
 	Game.mPd->graphics->freeBitmap(Game.mResources.mStageBackground);
 	Game.mPd->graphics->freeBitmap(Game.mResources.mSocket);
