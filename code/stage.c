@@ -21,6 +21,8 @@
 
 #define ONE_MINUTE 1800
 
+#define INVALID_ID 0
+
 static int Points[] = { 0, 4, 8, 16, 32, 64, 128 };
 
 void StageAddBall(SStage* stage, float x, float y, float vx, float vy, int energy);
@@ -51,6 +53,10 @@ void StageInit(SStage* stage, SStageConfig* config)
 	stage->mMaxNumberBalls = config->mMaxBalls;
 	stage->mNumberBalls = 0;
 	stage->mBalls = (SBall*)malloc(stage->mMaxNumberBalls * sizeof(SBall));
+	for (int i = 0; i < stage->mMaxNumberBalls; i++)
+	{
+		stage->mBalls[i].mId = INVALID_ID;
+	}
 
 	stage->mGunAngle = 0.01f;
 	stage->mIsGrabbing = false;
@@ -117,7 +123,6 @@ void StageDraw(SStage* stage)
 
 	for (int i = 0; i < stage->mMaxSlots; i++, y+=SOCKET_SIZE)
 	{
-
 		if (stage->mSlotSelected == i)
 		{
 			Game.mPd->graphics->drawLine(stage->mAnchorPos.x, stage->mAnchorPos.y, stage->mAnchorPos.x + 64*stage->mAimDirection.x, stage->mAnchorPos.y + 64*stage->mAimDirection.y, 1, kColorBlack);
@@ -127,14 +132,26 @@ void StageDraw(SStage* stage)
 	}
 
 
+	static char buffer[128];
+
 	SBall* ball = stage->mBalls;
-	for (int i=0; i<stage->mNumberBalls; i++, ball++)
+	for (int i = 0; i < stage->mMaxNumberBalls; i++, ball++)
 	{
+		if (ball->mId == INVALID_ID)
+		{
+			continue;
+		}
+
 		if (ball->mCanMerge)
 		{
 			DrawAnimatedSpriteRotated(Game.mPd, &ball->mFXCanMerge, ball->mPos.x, ball->mPos.y, ball->mAngle);
 		}
 		Game.mPd->graphics->drawBitmap(Game.mResources.mBalls[ball->mEnergy - 1], ball->mPos.x - 16, ball->mPos.y - 16, kBitmapUnflipped);
+
+#ifdef SHOW_DEBUG_TEXT
+		snprintf(buffer, 128, "ID: %2d", ball->mId);
+		Game.mPd->graphics->drawText(buffer, 128, kASCIIEncoding, ball->mPos.x - 16, ball->mPos.y-32);
+#endif
 	}
 
 	for (int i = 0; i < MAX_EXPLOSIONS_FX; i++)
@@ -151,8 +168,6 @@ void StageDraw(SStage* stage)
 	int seconds = secondsRaw % 60;
 	Game.mPd->graphics->setFont(Game.mResources.mFont);
 
-	static char buffer[128];
-	//sprintf(buffer, "%s\n%02d:%02d\n%03d", stage->mLevel, minutes, seconds, stage->mScore);
 	snprintf(buffer, 128, "%04d", stage->mScore);
 	DrawText(Game.mPd, buffer, 27, 7, Game.mResources.mFont, true);
 	if (stage->mCountdown < 0)
@@ -187,6 +202,24 @@ void StageUpdateAimDirection(SStage* stage)
 	stage->mAnchorPos.x = SOCKET_POS_X;
 	stage->mAnchorPos.y = SCREEN_HEIGHT * 0.5f - stage->mMaxSlots * SOCKET_SIZE / 2 + stage->mSlotSelected * SOCKET_SIZE + 16; 
 }
+
+void StageMergeBalls(SStage* stage, SBall* b1, SBall* b2)
+{
+	if (b1->mEnergy == 6)
+	{
+		StageDeleteBall(stage, b1->mId);
+		StageDeleteBall(stage, b2->mId);
+	}
+
+	Vec2f vel = b1->mVel;
+	StageSetupAtom(b2, b1->mEnergy + 1);
+	StageDeleteBall(stage, b1->mId);
+	b2->mVel.x += vel.x;
+	b2->mVel.y += vel.y;
+	b2->mVel.x *= 0.5f;
+	b2->mVel.y *= 0.5f;
+}
+
 
 void StageUpdateSpawningBalls(SStage* stage)
 {
@@ -267,9 +300,9 @@ void StageUpdatePhysics(SStage* stage)
 		if (stage->mBallGrabbed == NULL)
 		{
 			SBall* ball = stage->mBalls;
-			for (int i = 0; i < stage->mNumberBalls; i++, ball++)
+			for (int i = 0; i < stage->mMaxNumberBalls; i++, ball++)
 			{
-				if (!ball->mUpdatePhysics)
+				if (ball->mId == INVALID_ID || !ball->mUpdatePhysics)
 				{
 					continue;
 				}
@@ -307,9 +340,9 @@ void StageUpdatePhysics(SStage* stage)
 
 	// Update balls
 	SBall* ball = stage->mBalls;
-	for (int i = 0; i < stage->mNumberBalls; i++, ball++)
+	for (int i = 0; i < stage->mMaxNumberBalls; i++, ball++)
 	{
-		if (!ball->mUpdatePhysics)
+		if (ball->mId == INVALID_ID || !ball->mUpdatePhysics)
 		{
 			continue;
 		}
@@ -319,10 +352,10 @@ void StageUpdatePhysics(SStage* stage)
 	}
 
 	// Resolve collisions
-	for (int i = 0; i < stage->mNumberBalls; i++)
+	for (int i = 0; i < stage->mMaxNumberBalls; i++)
 	{
 		SBall* b1 = &stage->mBalls[i];
-		if (!b1->mUpdatePhysics)
+		if (b1->mId == INVALID_ID || !b1->mUpdatePhysics)
 		{
 			continue;;
 		}
@@ -331,7 +364,7 @@ void StageUpdatePhysics(SStage* stage)
 		for (int j = i+1; j < stage->mNumberBalls; j++)
 		{
 			SBall* b2 = &stage->mBalls[j];
-			if (!b2->mUpdatePhysics)
+			if (b2->mId == INVALID_ID || !b2->mUpdatePhysics)
 			{
 				continue;;
 			}
@@ -342,7 +375,7 @@ void StageUpdatePhysics(SStage* stage)
 			float overlapDst = b1->mRadius + b2->mRadius;
 			if (dst2 < overlapDst * overlapDst)
 			{
-				if ( (b1->mCanMerge || b2->mCanMerge) && (b1->mEnergy == b2->mEnergy))
+				if ((b1->mCanMerge || b2->mCanMerge) && (b1->mEnergy == b2->mEnergy))
 				{
 					// Merge
 					Game.mPd->sound->sampleplayer->setSample(Game.mSamplePlayer, Game.mResources.mAudio.mSampleInMergeDone);
@@ -355,33 +388,13 @@ void StageUpdatePhysics(SStage* stage)
 					ResetAnimationSprite(&stage->mExplosionsFX[ind]);
 					stage->mLastExplosionInd = ind;
 
-					if (b1->mEnergy == 6)
+					if (b1->mCanMerge)
 					{
-						StageDeleteBall(stage, b1->mId);
-						StageDeleteBall(stage, b2->mId);
+						StageMergeBalls(stage, b1, b2);
 					}
-					else
+					else if (b2->mCanMerge)
 					{
-						if (b1->mCanMerge)
-						{
-							Vec2f vel = b1->mVel;
-							StageSetupAtom(b2, b1->mEnergy+1);
-							StageDeleteBall(stage, b1->mId);
-							b2->mVel.x += vel.x;
-							b2->mVel.y += vel.y;
-							b2->mVel.x *= 0.5f;
-							b2->mVel.y *= 0.5f;
-						}
-						else if (b2->mCanMerge)
-						{
-							Vec2f vel = b2->mVel;
-							StageSetupAtom(b1, b2->mEnergy+1);
-							StageDeleteBall(stage, b2->mId);
-							b1->mVel.x += vel.x;
-							b1->mVel.y += vel.y;
-							b1->mVel.x *= 0.5f;
-							b1->mVel.y *= 0.5f;
-						}
+						StageMergeBalls(stage, b2, b1);
 					}
 					hasMerged = true;
 					break;
@@ -698,8 +711,8 @@ void StageUpdateInput(SStage* stage)
 				stage->mBallGrabbed->mVel.y *= 0.1f;
 				stage->mBallGrabbed = NULL;
 				stage->mIsGrabbing = 0;
+				Game.mPd->sound->sampleplayer->stop(Game.mSamplePlayer);
 			}
-			Game.mPd->sound->sampleplayer->stop(Game.mSamplePlayer);
 		}
 		else
 		{
@@ -759,26 +772,34 @@ void StageAddBall(SStage* stage, float x , float y, float vx, float vy, int ener
 		Game.mPd->system->error("ERROR: too many balls");
 		return;
 	}
-	/*
-	Not needed: memory allocated on StageInit
-	if (stage->mNumberBalls > stage->mNumberBallsAllocated)
-	{
-		stage->mNumberBallsAllocated += 8;
-		stage->mBalls = realloc(stage->mBalls, stage->mNumberBallsAllocated * sizeof(SBall));
-	}
-	*/
 
-	SBall* ballNew = &stage->mBalls[stage->mNumberBalls - 1];
-	ballNew->mId = stage->mNextId;
-	stage->mNextId++;
-	ballNew->mPos.x = x;
-	ballNew->mPos.y = y;
-	ballNew->mVel.x = vx;
-	ballNew->mVel.y = vy;
-	ballNew->mUpdatePhysics = true;
-	ballNew->mCanMerge = false;
-	ballNew->mFXCanMerge = CreateAnimationSprite(Game.mResources.mAtomSelectedFX, 3, 2);
-	StageSetupAtom(ballNew, energy);
+	SBall* ballNew = NULL;
+	for (int i=0; i<stage->mMaxNumberBalls; i++)
+	{
+		if (stage->mBalls[i].mId == INVALID_ID)
+		{
+			ballNew = &stage->mBalls[i];
+			break;
+		}
+	}
+
+	if (ballNew != NULL)
+	{
+		ballNew->mId = stage->mNextId;
+		stage->mNextId++;
+		ballNew->mPos.x = x;
+		ballNew->mPos.y = y;
+		ballNew->mVel.x = vx;
+		ballNew->mVel.y = vy;
+		ballNew->mUpdatePhysics = true;
+		ballNew->mCanMerge = false;
+		ballNew->mFXCanMerge = CreateAnimationSprite(Game.mResources.mAtomSelectedFX, 3, 2);
+		StageSetupAtom(ballNew, energy);
+	}
+	else
+	{
+		//ERROR!!!! should never end up here
+	}
 	
 }
 
@@ -810,11 +831,11 @@ void StageSetupAtom(SBall* ball, int energy)
 
 void StageDeleteBall(SStage* stage, unsigned int id)
 {
-	for (int i=0; i<stage->mNumberBalls; i++)
+	for (int i=0; i<stage->mMaxNumberBalls; i++)
 	{
 		if (stage->mBalls[i].mId == id)
 		{
-			stage->mBalls[i] = stage->mBalls[stage->mNumberBalls - 1];
+			stage->mBalls[i].mId = INVALID_ID;
 			break;
 		}
 	}

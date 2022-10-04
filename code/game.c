@@ -104,12 +104,27 @@ void SaveScoreboard()
 void AddScore(int score, int level)
 {
 	int ind = level * MAX_SCORES;
+	int indToWrite = -1;
+	int scoreOverriden = 0;
 	for (int i=0; i<MAX_SCORES; i++, ind++)
 	{
 		if (score > Game.mScoreboard[ind])
 		{
+			//Game.mScoreboard[ind] = score;
+			indToWrite = i;
+			scoreOverriden = Game.mScoreboard[ind];
 			Game.mScoreboard[ind] = score;
 			break;
+		}
+	}
+	if (indToWrite != -1)
+	{
+		ind = level * MAX_SCORES + indToWrite+1;
+		for (int i = indToWrite+1; i < MAX_SCORES; i++, ind++)
+		{
+			int tmp = Game.mScoreboard[ind];
+			Game.mScoreboard[ind] = scoreOverriden;
+			scoreOverriden = tmp;
 		}
 	}
 	SaveScoreboard();

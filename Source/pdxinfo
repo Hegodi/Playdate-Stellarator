@@ -3,5 +3,5 @@ author=Hegodi Games
 description= Puzzle Bobble (Bust-a-Move) meets 2048 with some extra sauce.
 bundleID=com.hegodigames.bifusion
 version=1.0.0
-buildNumber=34
+buildNumber=36
 imagePath=card.png
