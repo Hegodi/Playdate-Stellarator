@@ -209,6 +209,7 @@ void StageMergeBalls(SStage* stage, SBall* b1, SBall* b2)
 	{
 		StageDeleteBall(stage, b1->mId);
 		StageDeleteBall(stage, b2->mId);
+		return;
 	}
 
 	Vec2f vel = b1->mVel;

@@ -3,7 +3,7 @@
 
 #include <stdbool.h>
 #include "utils.h"
-#include "Ball.h"
+#include "ball.h"
 
 #define MAX_EXPLOSIONS_FX 3
 
